@@ -1,0 +1,14 @@
+button:disabled,
+button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+[aria-busy="true"] {
+  cursor: progress;
+}
+
+.field-error {
+  border-color: #e9a5ab !important;
+  box-shadow: 0 0 0 3px #fff0f1 !important;
+}
