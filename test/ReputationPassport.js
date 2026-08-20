@@ -70,4 +70,9 @@ describe("ReputationPassport", function () {
     const { passport, issuer, holder } = await fixture();
     await expect(passport.connect(issuer).issueCredential(holder.address, "Technical", "Too much", "Invalid", 1723766400, 0, 1001, ethers.id("invalid"))).to.be.revertedWith("Score must be between 1 and 1000");
   });
+
+  it("rejects unknown issuer status values", async function () {
+    const { passport, admin, issuer } = await fixture();
+    await expect(passport.connect(admin).setIssuerStatus(issuer.address, 9)).to.be.revertedWith("Invalid issuer status");
+  });
 });
