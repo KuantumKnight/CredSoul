@@ -458,10 +458,17 @@ async function hashFile(file) {
   return `0x${[...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
+function markFieldError(field, hasError) {
+  field?.classList.toggle("field-error", hasError);
+  field?.setAttribute("aria-invalid", String(hasError));
+}
+
 async function issueCredential(event) {
   event.preventDefault(); const form = new FormData(event.currentTarget); const type = form.get("type"); const file = form.get("evidence"); const level = Number(form.get("level") || 1); const score = Math.round((SCORE_BY_TYPE[type] || 25) * level); const evidenceHash = file instanceof File && file.size ? await hashFile(file) : ZERO_EVIDENCE_HASH;
   const raw = { recipient: String(form.get("recipient")).trim(), category: String(form.get("category")), title: String(form.get("title")).trim(), description: String(form.get("description")).trim(), issueDate: String(form.get("issueDate") || today()), expiryDate: String(form.get("expiry") || ""), score, evidenceHash, issuer: state.account, issuerName: state.mode === "demo" ? "VIT Chennai" : "Connected issuer", status: "ACTIVE", evidenceName: file instanceof File ? file.name : "" };
-  if (!ethers.isAddress(raw.recipient)) { toast("Invalid recipient", "Use a valid EVM wallet address.", "error"); return; }
+  const recipientField = event.currentTarget.elements.recipient;
+  if (!ethers.isAddress(raw.recipient)) { markFieldError(recipientField, true); toast("Invalid recipient", "Use a valid EVM wallet address.", "error"); return; }
+  markFieldError(recipientField, false);
   if (!raw.title || !raw.description) { toast("Missing credential data", "Title and description are required.", "error"); return; }
   if (raw.expiryDate && parseDate(raw.expiryDate) <= parseDate(raw.issueDate)) { toast("Invalid expiration", "Expiration must be later than the issue date.", "error"); return; }
   if (state.mode === "demo") { const next = state.credentials.length + 1; const credential = { ...raw, id: `VC-DEMO-${String(next).padStart(4, "0")}`, issuer: DEMO_ISSUERS.vit, issuerName: "VIT Chennai" }; state.credentials.unshift(credential); state.score = state.credentials.filter((item) => credentialStatus(item) === "ACTIVE").reduce((sum, item) => sum + item.score, 0); calculateCategories(); renderAll(); event.currentTarget.reset(); toast("Demo credential issued", `Added ${raw.title} with +${score} points. This did not touch a blockchain.`, "warn"); return; }
