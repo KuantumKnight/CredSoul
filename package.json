@@ -2,12 +2,14 @@
   "name": "verity-reputation-passport",
   "version": "1.0.0",
   "private": true,
+  "description": "Wallet-connected soulbound reputation passports with a safe local demo mode",
   "type": "module",
   "scripts": {
     "chain": "hardhat node",
     "compile": "hardhat compile",
     "deploy": "hardhat run scripts/deploy.js --network localhost",
     "test:contract": "hardhat test",
+    "check": "npm run compile && npm run test:contract && npm run build",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
