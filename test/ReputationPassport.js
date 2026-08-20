@@ -65,4 +65,9 @@ describe("ReputationPassport", function () {
     const records = await passport.getCredentials([1, 2]);
     expect(records.map((record) => record.title)).to.deep.equal(["First", "Second"]);
   });
+
+  it("enforces the maximum credential score", async function () {
+    const { passport, issuer, holder } = await fixture();
+    await expect(passport.connect(issuer).issueCredential(holder.address, "Technical", "Too much", "Invalid", 1723766400, 0, 1001, ethers.id("invalid"))).to.be.revertedWith("Score must be between 1 and 1000");
+  });
 });
