@@ -429,6 +429,15 @@ async function createProfile() {
 
 function readableError(error) { const code = error?.code || error?.info?.error?.code; if (code === 4001 || code === "ACTION_REJECTED") return "The wallet request was rejected."; const text = error?.shortMessage || error?.reason || error?.message || "Unknown transaction error"; return text.replace(/^execution reverted: /i, "").replace(/^user rejected.*/i, "The wallet request was rejected.").slice(0, 180); }
 
+function downloadJSON(filename, payload) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 async function hashFile(file) { const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer()); return `0x${[...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`; }
 
 async function issueCredential(event) {
