@@ -524,7 +524,7 @@ async function initialize() {
   $("#notificationsButton").addEventListener("click", () => toast("No new alerts", state.mode === "demo" ? "Demo notifications are disabled." : "Credential and issuer events will appear here when enabled."));
   $("#networkSelector").addEventListener("click", () => toast("Network selection", state.deployment ? `Connected to ${state.deployment.network} · chain ${state.deployment.chainId}. Change networks in your wallet.` : "Deploy the contract to configure a network."));
   $("#modeToggle").addEventListener("click", () => setMode(state.mode === "demo" ? "live" : "demo"));
-  $("#mobileMenu").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+  $("#mobileMenu").addEventListener("click", () => { const sidebar = $("#sidebar"); const open = sidebar.classList.toggle("open"); $("#mobileMenu").setAttribute("aria-expanded", String(open)); });
   $$(".nav-item").forEach((item) => item.addEventListener("click", () => activateView(item.dataset.view)));
   document.addEventListener("click", async (event) => {
     const target = event.target.closest("[data-view-target]"); if (target) activateView(target.dataset.viewTarget);
