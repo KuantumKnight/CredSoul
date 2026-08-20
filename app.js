@@ -506,6 +506,7 @@ function openIssuerRequestModal() { openModal(`<div class="modal-header"><div><s
 async function requestIssuer(event) { event.preventDefault(); const form = new FormData(event.currentTarget); if (state.mode === "demo") { closeModal(); toast("Demo request submitted", "A pending issuer request was added to the local scenario.", "warn"); return; } if (!state.contract) return connectWallet(); try { const tx = await state.contract.requestIssuer(form.get("name"), form.get("website"), form.get("type")); await tx.wait(); closeModal(); await refreshLive(); toast("Issuer request submitted", "The contract owner can now approve this wallet."); } catch (error) { toast("Request failed", readableError(error), "error"); } }
 
 async function initialize() {
+  document.title = `${APP_NAME} — Soulbound Reputation Passport`;
   await Promise.all([loadDeployment(), initializeClerk()]);
   const issueDate = $("#issueDateInput"); if (issueDate) issueDate.value = today();
   const publicHolder = new URLSearchParams(location.search).get("holder");
