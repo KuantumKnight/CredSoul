@@ -55,4 +55,14 @@ describe("ReputationPassport", function () {
     expect(await passport.verifyEvidence(1, hash)).to.equal(true);
     expect(await passport.verifyEvidence(1, ethers.id("different.pdf"))).to.equal(false);
   });
+
+  it("supports batch reads and collection counts", async function () {
+    const { passport, issuer, holder } = await fixture();
+    await passport.connect(issuer).issueCredential(holder.address, "Technical", "First", "One", 1723766400, 0, 20, ethers.id("one"));
+    await passport.connect(issuer).issueCredential(holder.address, "Community", "Second", "Two", 1723766400, 0, 30, ethers.id("two"));
+    expect(await passport.getHolderCredentialCount(holder.address)).to.equal(2n);
+    expect(await passport.getIssuerCredentialCount(issuer.address)).to.equal(2n);
+    const records = await passport.getCredentials([1, 2]);
+    expect(records.map((record) => record.title)).to.deep.equal(["First", "Second"]);
+  });
 });
