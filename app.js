@@ -28,6 +28,9 @@ const CATEGORY_LIST = ["Academic", "Technical", "Research", "Hackathon", "Open S
 const SCORE_BY_TYPE = { hackathon: 100, certification: 40, research: 100, internship: 40, opensource: 75, leadership: 50, community: 20, academic: 25 };
 const STATUS_NAMES = ["ACTIVE", "REVOKED"];
 const MODE_KEY = "verity-mode";
+const DEFAULT_LOCAL_RPC = "http://127.0.0.1:8545";
+const ZERO_EVIDENCE_HASH = `0x${"0".repeat(64)}`;
+const APP_NAME = "Verity";
 
 const DEMO_WALLET = "0x9f3a7b24d031cee6b9c812000000000000000000";
 const DEMO_ISSUERS = { vit: "0x1111111111111111111111111111111111111111", cloud: "0x2222222222222222222222222222222222222222", lab: "0x3333333333333333333333333333333333333333" };
@@ -475,7 +478,7 @@ async function initialize() {
   if (state.mode === "demo") setMode("demo"); else if (publicHolder && ethers.isAddress(publicHolder) && state.deployment?.address) {
     state.publicProfile = true;
     state.account = publicHolder;
-    state.provider = new ethers.JsonRpcProvider(state.deployment.rpcUrl || "http://127.0.0.1:8545");
+    state.provider = new ethers.JsonRpcProvider(state.deployment.rpcUrl || DEFAULT_LOCAL_RPC);
     state.contract = new ethers.Contract(state.deployment.address, ABI, state.provider);
     await refreshLive();
     toast("Public profile", `Read-only profile for ${shortAddress(publicHolder)}. No wallet is required.`);
