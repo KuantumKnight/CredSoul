@@ -18,6 +18,7 @@ describe("ReputationPassport", function () {
   it("creates one profile and blocks transfers", async function () {
     const { passport, holder, other } = await fixture();
     expect(await passport.passportToken(holder.address)).to.equal(1n);
+    await expect(passport.connect(holder).createProfile()).to.be.revertedWith("Profile already exists");
     await expect(passport.connect(holder).transferFrom(holder.address, other.address, 1)).to.be.revertedWith("Soulbound token is non-transferable");
   });
 
