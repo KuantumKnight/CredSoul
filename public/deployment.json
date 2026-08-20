@@ -1,0 +1,8 @@
+{
+  "contractName": "ReputationPassport",
+  "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+  "chainId": 31337,
+  "network": "localhost",
+  "rpcUrl": "http://127.0.0.1:8545",
+  "deployedAt": "2026-08-20T07:20:44.824Z"
+}

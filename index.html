@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#08111f" />
+    <title>Verity — Soulbound Reputation Passport</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-mark"><span></span><span></span><span></span></div>
+          <div>
+            <div class="brand-name">verity</div>
+            <div class="brand-tag">reputation passport</div>
+          </div>
+        </div>
+
+        <div class="network-pill"><span class="pulse"></span><span id="sidebarNetworkLabel">Contract not loaded</span><span class="mono">●</span></div>
+
+        <div class="nav-label">Workspace</div>
+        <nav class="main-nav" aria-label="Primary navigation">
+            <button class="nav-item active" data-view="overview"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1v-8Z"/></svg></span><span>My passport</span></button>
+          <button class="nav-item" data-view="credentials"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.5 7.5 7.5 4 7.5-4M12 12v9"/></svg></span><span>Credentials</span><span class="nav-count" id="credentialNavCount">0</span></button>
+          <button class="nav-item" data-view="reputation"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9V3Z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15V3.5Z"/></svg></span><span>Reputation</span></button>
+          <button class="nav-item" data-view="verify"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5M8 10.5h5"/></svg></span><span>Verify a credential</span></button>
+        </nav>
+
+        <div class="nav-label nav-label-spaced">Operations</div>
+        <nav class="main-nav" aria-label="Operations navigation">
+          <button class="nav-item" data-view="issuer"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M8 5h11v11"/></svg></span><span>Issuer console</span><span class="status-dot"></span></button>
+          <button class="nav-item" data-view="admin"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></span><span>Admin controls</span><span class="nav-count accent-count demo-only">3</span></button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="help-card">
+            <div class="help-orb">?</div>
+            <div><strong>Need a hand?</strong><span>Read the verification guide</span></div>
+            <span class="arrow">↗</span>
+          </div>
+          <button class="wallet-card" id="walletButton">
+            <span class="wallet-avatar">SM</span>
+            <span class="wallet-copy"><strong id="walletLabel">Sarvesh M.</strong><small id="walletAddress">0x9F3a...C812</small></span>
+            <span class="wallet-menu">•••</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+          <div class="breadcrumbs"><span>Workspace</span><span>/</span><strong id="breadcrumbCurrent">My passport</strong></div>
+          <div class="topbar-actions">
+            <button class="mode-toggle" id="modeToggle"><span class="mode-dot"></span><span id="modeLabel">Live mode</span></button>
+            <button class="icon-button" id="notificationsButton" aria-label="Notifications">◌<span class="notification-dot"></span></button>
+            <button class="network-selector" id="networkSelector"><span class="pulse"></span><span id="networkLabel">Local chain</span> <span class="chevron">⌄</span></button>
+            <button class="profile-chip" id="authButton"><span class="mini-avatar" id="authAvatar">?</span><span class="profile-chip-name" id="authLabel">Sign in</span><span class="chevron">⌄</span></button>
+            <button class="auth-signup" id="authSignupButton">Create account</button>
+          </div>
+        </header>
+
+        <div class="content-wrap">
+          <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+
+          <section class="view active" id="view-overview">
+            <div class="page-intro">
+              <div>
+                <div class="eyebrow"><span class="eyebrow-dot"></span> Personal reputation passport</div>
+                <h1>Good morning<span id="holderNameSuffix"></span><span class="title-period">.</span></h1>
+                <p id="holderIntro">Connect a wallet to load your on-chain reputation passport.</p>
+              </div>
+              <div class="intro-actions"><button class="button secondary" data-action="share">Share passport <span>↗</span></button><button class="button primary" data-action="verify">Verify a credential <span>⌕</span></button></div>
+            </div>
+
+            <div class="passport-grid">
+              <article class="score-card panel dark-panel">
+                <div class="card-topline"><span class="section-kicker light">Reputation score</span><span class="live-indicator"><span class="green-dot"></span><span id="scoreSource">Wallet required</span></span></div>
+                <div class="score-row"><div class="score-number" id="overallScore">0</div><div class="score-max">/ 1000</div></div>
+                <div class="tier-row"><span class="tier-badge" id="tierBadge">STARTER</span><span class="tier-copy" id="tierCopy">Connect wallet to load your score</span></div>
+                <div class="score-chart" aria-label="Reputation score trend chart"><svg viewBox="0 0 600 145" role="img"><defs><linearGradient id="scoreFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7ef1c4" stop-opacity=".34"/><stop offset="1" stop-color="#7ef1c4" stop-opacity="0"/></linearGradient></defs><path class="chart-fill" d="M0 130 C55 124 68 111 104 115 S160 86 191 92 S228 67 265 79 S321 45 352 58 S397 30 428 41 S469 22 502 33 S550 11 600 16 V145 H0 Z"/><path class="chart-line" d="M0 130 C55 124 68 111 104 115 S160 86 191 92 S228 67 265 79 S321 45 352 58 S397 30 428 41 S469 22 502 33 S550 11 600 16"/><circle cx="600" cy="16" r="5" class="chart-point"/></svg><div class="chart-labels"><span>JAN</span><span>MAR</span><span>MAY</span><span>JUL</span><span>AUG 2026</span></div></div>
+            <div class="score-footer"><span><span class="green-dot"></span><span id="scoreDelta">No live data</span></span><span class="mono" id="scoreSync">Connect wallet</span></div>
+              </article>
+
+              <article class="identity-card panel">
+                <div class="card-topline"><span class="section-kicker">Soulbound identity</span><span class="verified-mark">✓</span></div>
+                <div class="identity-main"><div class="identity-avatar"><span id="identityInitials">—</span><i></i></div><div><h2 id="identityName">Wallet not connected</h2><div class="address-line mono" id="identityAddress">Connect a wallet to continue <button class="copy-button" data-copy="">⧉</button></div><p id="identityOrg">Live data is read from the deployed contract</p></div></div>
+                <div class="identity-meta"><div><span>SBT ID</span><strong class="mono" id="sbtId">—</strong></div><div><span>Member since</span><strong id="memberSince">—</strong></div></div>
+                <div class="identity-footer"><span class="non-transferable"><span class="lock">⌑</span> Non-transferable identity</span><button class="text-button" data-action="transfer">Test transfer <span>→</span></button></div>
+              </article>
+            </div>
+
+            <div class="section-heading"><div><span class="section-kicker">At a glance</span><h2>Reputation breakdown</h2></div><button class="text-button" data-view-target="reputation">View full breakdown <span>→</span></button></div>
+            <div class="breakdown-grid" id="breakdownGrid"></div>
+
+            <div class="content-grid">
+              <section class="panel achievements-panel"><div class="section-heading compact"><div><span class="section-kicker">Proof of work</span><h2>Recent achievements</h2></div><button class="text-button" data-view-target="credentials">View all <span>→</span></button></div><div id="recentCredentials" class="credential-list"></div></section>
+              <section class="panel history-panel"><div class="section-heading compact"><div><span class="section-kicker">Audit trail</span><h2>Reputation history</h2></div><span class="mono small-muted">LIVE LEDGER</span></div><div id="historyList" class="history-list"></div></section>
+            </div>
+
+            <div class="security-strip"><div class="security-icon">✦</div><div><strong>Verified on-chain, readable everywhere.</strong><span>Every score change is linked to an issuer-approved credential and preserved in the audit trail.</span></div><button class="text-button" data-view-target="verify">How verification works <span>→</span></button></div>
+          </section>
+
+          <section class="view" id="view-credentials">
+            <div class="page-intro"><div><div class="eyebrow"><span class="eyebrow-dot"></span> Your verified record</div><h1>Credentials<span class="title-period">.</span></h1><p>A transparent history of the work behind your reputation.</p></div><div class="intro-actions"><button class="button secondary" data-action="export">Export record <span>↓</span></button><button class="button primary" data-view-target="issuer">Issue credential <span>+</span></button></div></div>
+            <div class="metric-row"><div class="metric-card panel"><span class="metric-label">Total credentials</span><strong id="credentialMetric">0</strong><span class="metric-note">all-time issued</span></div><div class="metric-card panel"><span class="metric-label">Active now</span><strong class="metric-green" id="activeMetric">0</strong><span class="metric-note">contributing to score</span></div><div class="metric-card panel"><span class="metric-label">Issuing bodies</span><strong id="issuerMetric">0</strong><span class="metric-note">verified organizations</span></div><div class="metric-card panel"><span class="metric-label">Evidence coverage</span><strong id="evidenceMetric">0<span class="metric-suffix">%</span></strong><span class="metric-note">hashes registered</span></div></div>
+            <div class="filter-bar"><div class="filter-tabs" id="credentialFilters"><button class="filter-tab active" data-filter="all">All <span id="allFilterCount">0</span></button><button class="filter-tab" data-filter="active">Active <span id="activeFilterCount">0</span></button><button class="filter-tab" data-filter="expired">Expired <span id="expiredFilterCount">0</span></button><button class="filter-tab" data-filter="revoked">Revoked <span id="revokedFilterCount">0</span></button></div><div class="search-field"><span>⌕</span><input id="credentialSearch" type="search" placeholder="Search credentials" /></div></div>
+            <div id="credentialGrid" class="credential-grid"></div>
+          </section>
+
+          <section class="view" id="view-reputation">
+            <div class="page-intro"><div><div class="eyebrow"><span class="eyebrow-dot"></span> Transparent scoring</div><h1>Reputation<span class="title-period">.</span></h1><p>See exactly how your living score is calculated.</p></div><div class="score-mini panel"><span>Current score</span><strong id="reputationMiniScore">0</strong><em id="reputationMiniTier">STARTER</em></div></div>
+            <div class="reputation-layout"><section class="panel radar-panel"><div class="section-heading compact"><div><span class="section-kicker">Multidimensional profile</span><h2>Where your reputation comes from</h2></div></div><div class="radar-wrap"><div class="radar-chart" id="radarChart"></div><div class="radar-legend" id="radarLegend"></div></div></section><section class="panel score-breakdown-panel"><div class="section-heading compact"><div><span class="section-kicker">Contribution ledger</span><h2>Score breakdown</h2></div><span class="mono small-muted">ACTIVE ONLY</span></div><div id="scoreLedger" class="score-ledger"></div><div class="ledger-total"><span>Active reputation</span><strong id="ledgerTotal">0</strong></div></section></div>
+            <section class="panel timeline-panel"><div class="section-heading compact"><div><span class="section-kicker">Immutable history</span><h2>Score timeline</h2></div><span class="mono small-muted" id="chainMeta">AWAITING WALLET</span></div><div id="fullHistoryList" class="full-history-list"></div></section>
+          </section>
+
+          <section class="view" id="view-verify">
+            <div class="page-intro"><div><div class="eyebrow"><span class="eyebrow-dot"></span> Open verification portal</div><h1>Verify a credential<span class="title-period">.</span></h1><p>No wallet required. Confirm the issuer, evidence, and current status.</p></div><div class="verify-seal">✓<span>Public<br />verification</span></div></div>
+            <div class="verify-layout"><section class="panel verify-search-panel"><div class="verify-heading"><div class="verify-icon">⌕</div><div><h2>Look up a credential</h2><p>Enter a credential ID or holder wallet address.</p></div></div><div class="large-search"><input id="verifyInput" placeholder="e.g. credential ID" autocomplete="off" /><button id="verifyButton" class="button primary">Verify <span>→</span></button></div><div class="demo-ids demo-only"><span>Demo records:</span><button data-verify-id="VC-2026-0017">VC-2026-0017</button><button data-verify-id="VC-2025-0088">VC-2025-0088</button><button data-verify-id="0x9f3a7b24d031cee6b9c812000000000000000000">Holder wallet</button></div></section><section id="verificationResult" class="panel verification-result empty-result"><div class="empty-result-icon">⌁</div><h2>Verification result</h2><p>Enter a credential ID to check the live contract.</p><div class="result-hint"><span class="green-dot"></span> No record has been selected</div></section></div>
+            <section class="hash-explainer"><div class="hash-step"><span>01</span><strong>Issuer uploads evidence</strong><p>The original certificate stays with the issuer. Verity creates a SHA-256 fingerprint.</p></div><div class="hash-arrow">→</div><div class="hash-step"><span>02</span><strong>Proof is registered</strong><p>Only the evidence hash and credential facts are anchored to the credential record.</p></div><div class="hash-arrow">→</div><div class="hash-step"><span>03</span><strong>Anyone can compare</strong><p>Present a file later to confirm it has not changed since issuance.</p></div></section>
+          </section>
+
+          <section class="view" id="view-issuer">
+            <div class="page-intro"><div><div class="eyebrow"><span class="eyebrow-dot amber"></span> Organization issuer tools</div><h1>Issuer console<span class="title-period">.</span></h1><p>Issue trusted achievements and maintain the record.</p></div><button class="issuer-status" id="issuerStatus" data-action="requestIssuer"><span class="status-dot"></span> Request issuer status</button></div>
+            <div class="metric-row issuer-metrics"><div class="metric-card panel"><span class="metric-label">Credentials issued</span><strong id="issuedMetric">0</strong><span class="metric-note" id="issuerMetricContext">connect issuer wallet</span></div><div class="metric-card panel"><span class="metric-label">Active credentials</span><strong class="metric-green" id="issuedActiveMetric">0</strong><span class="metric-note" id="issuerMetricContextActive">no live data</span></div><div class="metric-card panel"><span class="metric-label">Unique recipients</span><strong id="issuedRecipientsMetric">0</strong><span class="metric-note" id="issuerMetricContextRecipients">no live data</span></div><div class="metric-card panel"><span class="metric-label">Revocation rate</span><strong id="issuedRevocationMetric">0<span class="metric-suffix">%</span></strong><span class="metric-note" id="issuerMetricContextRevoked">no live data</span></div></div>
+            <div class="issuer-layout"><section class="panel issue-form-panel"><div class="section-heading compact"><div><span class="section-kicker">New credential</span><h2>Issue an achievement</h2></div><span class="step-label">Step 1 of 2</span></div><form id="issueForm"><label>Recipient wallet<input required name="recipient" placeholder="0x..." /></label><div class="form-grid"><label>Credential title<input required name="title" placeholder="e.g. Hackathon Winner" /></label><label>Achievement type<select name="type"><option value="hackathon">Hackathon winner</option><option value="certification">Technical certification</option><option value="research">Research publication</option><option value="internship">Internship</option><option value="opensource">Open-source contribution</option><option value="leadership">Leadership role</option><option value="community">Volunteer contribution</option></select></label></div><div class="form-grid"><label>Category<select name="category"><option>Hackathon</option><option>Technical</option><option>Research</option><option>Professional</option><option>Open Source</option><option>Leadership</option><option>Community</option><option>Academic</option></select></label><label>Achievement level<select name="level"><option value="1">Standard · 1.0×</option><option value="1.2">Distinction · 1.2×</option><option value="1.5">Exceptional · 1.5×</option></select></label></div><label>Description<textarea required name="description" rows="3" placeholder="Describe what was achieved and how it was assessed."></textarea></label><div class="form-grid"><label>Issue date<input name="issueDate" id="issueDateInput" type="date" /></label><label>Expiration <span class="optional">optional</span><input name="expiry" type="date" /></label></div><label class="upload-box"><input name="evidence" id="evidenceInput" type="file" accept=".pdf,image/*" /><span class="upload-icon">↑</span><span><strong id="uploadTitle">Attach supporting evidence</strong><small id="uploadMeta">PDF or image · hashed before registration</small></span><span class="upload-browse">Browse</span></label><div class="form-note"><span>ⓘ</span> The file itself is never stored on-chain. Only its fingerprint is published.</div><button class="button primary full-width" type="submit">Review & issue credential <span>→</span></button></form></section><section class="panel issuer-side-panel"><div class="section-heading compact"><div><span class="section-kicker">Your activity</span><h2>Recent issues</h2></div><button class="text-button" data-action="issuerExport">Export <span>↓</span></button></div><div id="issuerActivity" class="issuer-activity"></div><div class="issuer-trust"><span class="trust-icon">✓</span><div><strong>Trusted issuer</strong><span id="issuerTrustCopy">Connect a wallet to load issuer status</span></div></div></section></div>
+          </section>
+
+          <section class="view" id="view-admin">
+            <div class="page-intro"><div><div class="eyebrow"><span class="eyebrow-dot purple"></span> Platform governance</div><h1>Admin controls<span class="title-period">.</span></h1><p>Manage the trust layer behind the issuer network.</p></div><div class="admin-chip"><span class="admin-avatar">A</span> <span id="adminIdentityLabel">Admin wallet</span> <span class="mono" id="adminIdentityAddress">not loaded</span></div></div>
+            <div class="admin-stats"><div class="admin-stat panel"><span class="stat-icon purple-bg">◎</span><div><strong id="adminHolderCount">0</strong><span>Total holders</span></div><em id="adminHolderContext">current record</em></div><div class="admin-stat panel"><span class="stat-icon green-bg">◇</span><div><strong id="adminCredentialCount">0</strong><span>Total credentials</span></div><em id="adminCredentialContext">current record</em></div><div class="admin-stat panel"><span class="stat-icon amber-bg">✓</span><div><strong id="adminIssuerCount">0</strong><span>Verified issuers</span></div><em id="adminIssuerContext">current record</em></div><div class="admin-stat panel"><span class="stat-icon red-bg">!</span><div><strong id="adminRevocationRate">0%</strong><span>Revocation rate</span></div><em class="negative" id="adminRevocationContext">current record</em></div></div>
+            <div class="admin-layout"><section class="panel issuer-requests-panel"><div class="section-heading compact"><div><span class="section-kicker">Needs review</span><h2>Issuer requests</h2></div><span class="request-count" id="requestCount">0 pending</span></div><div id="issuerRequests" class="issuer-requests"></div></section><section class="panel policy-panel"><div class="section-heading compact"><div><span class="section-kicker">Protocol policy</span><h2>Scoring configuration</h2></div><span class="mono small-muted">CONTRACT RULES</span></div><div class="policy-row"><div><strong>Credential freshness</strong><span>Active credentials only</span></div><span class="toggle on"></span></div><div class="policy-row"><div><strong>Issuer credibility weight</strong><span>Verified issuers · 1.0×</span></div><span class="toggle on"></span></div><div class="policy-row"><div><strong>Category score caps</strong><span>Maximum 250 per category</span></div><span class="toggle on"></span></div><div class="policy-row"><div><strong>Historical credit</strong><span>Expired credentials excluded</span></div><span class="toggle"></span></div><div class="policy-footer"><span class="green-dot"></span> Policy is enforced by the deployed contract</div></section></div>
+            <section class="panel activity-panel"><div class="section-heading compact"><div><span class="section-kicker">Network audit</span><h2>Latest platform activity</h2></div><span class="mono small-muted">FROM CURRENT RECORD</span></div><div class="audit-table" id="auditTable"></div></section>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true"><div class="modal" id="modalContent"></div></div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
