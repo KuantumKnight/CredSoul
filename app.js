@@ -505,6 +505,15 @@ function openIssuerRequestModal() { openModal(`<div class="modal-header"><div><s
 
 async function requestIssuer(event) { event.preventDefault(); const form = new FormData(event.currentTarget); if (state.mode === "demo") { closeModal(); toast("Demo request submitted", "A pending issuer request was added to the local scenario.", "warn"); return; } if (!state.contract) return connectWallet(); try { const tx = await state.contract.requestIssuer(form.get("name"), form.get("website"), form.get("type")); await tx.wait(); closeModal(); await refreshLive(); toast("Issuer request submitted", "The contract owner can now approve this wallet."); } catch (error) { toast("Request failed", readableError(error), "error"); } }
 
+function handleWalletEvents() {
+  if (!window.ethereum?.on) return;
+  window.ethereum.on("accountsChanged", (accounts) => {
+    if (!accounts.length) { state.account = ""; state.signer = null; state.contract = null; state.profileExists = false; state.credentials = []; state.score = 0; calculateCategories(); renderAll(); return; }
+    if (state.mode === "live") refreshLive();
+  });
+  window.ethereum.on("chainChanged", () => { if (state.mode === "live") window.location.reload(); });
+}
+
 async function initialize() {
   document.title = `${APP_NAME} — Soulbound Reputation Passport`;
   await Promise.all([loadDeployment(), initializeClerk()]);
@@ -551,7 +560,7 @@ async function initialize() {
   $$("#credentialFilters .filter-tab").forEach((tab) => tab.addEventListener("click", () => { $$("#credentialFilters .filter-tab").forEach((item) => item.classList.remove("active")); tab.classList.add("active"); renderCredentials(); }));
   $("#issueForm").addEventListener("submit", issueCredential); $("#issuerRequestForm")?.addEventListener("submit", requestIssuer);
   $("#evidenceInput").addEventListener("change", (event) => { const file = event.target.files?.[0]; if (file) { $("#uploadTitle").textContent = file.name; $("#uploadMeta").textContent = `${Math.round(file.size / 1024)} KB · SHA-256 before registration`; } });
-  if (window.ethereum) window.ethereum.on?.("accountsChanged", () => state.mode === "live" && refreshLive());
+  handleWalletEvents();
 }
 
 initialize();
