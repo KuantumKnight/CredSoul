@@ -60,6 +60,17 @@ Click `Live mode` in the top bar to explicitly switch to `Demo mode`. Demo mode 
 ## Verification
 
 ```powershell
-npm run test:contract
-npm run build
+npm run check
 ```
+
+The same command runs Solidity compilation, contract tests, and the
+production Vite build. GitHub Actions runs it on pushes and pull requests.
+
+## Troubleshooting
+
+- If Live mode says the contract is not configured, run the deploy script and
+  check `public/deployment.json`.
+- If MetaMask reports the wrong network, switch to the chain ID shown by the
+  network pill.
+- If account linking is unavailable, confirm that only the Clerk publishable
+  key is present in the Vite environment and that the account is signed in.
