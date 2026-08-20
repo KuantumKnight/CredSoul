@@ -531,7 +531,7 @@ async function initialize() {
     if (event.target.closest("[data-action=viewAudit]")) toast("Audit log", "The latest platform events are shown in the table below.");
     if (event.target.closest("[data-action=requestIssuer]")) openIssuerRequestModal();
     if (event.target.closest("[data-close-modal]") || event.target === $("#modalBackdrop")) closeModal();
-    const copyTarget = event.target.closest("[data-copy]"); if (copyTarget) { try { await navigator.clipboard.writeText(copyTarget.dataset.copy); toast("Copied", "Copied to clipboard."); } catch { toast("Copy unavailable", "Select the text manually.", "warn"); } }
+    const copyTarget = event.target.closest("[data-copy]"); if (copyTarget) { try { await copyText(copyTarget.dataset.copy); toast("Copied", "Copied to clipboard."); } catch { toast("Copy unavailable", "Select the text manually.", "warn"); } }
     const details = event.target.closest("[data-credential-details]"); if (details) openCredentialModal(details.dataset.credentialDetails);
     const demoRevoke = event.target.closest("[data-demo-revoke]"); if (demoRevoke) revokeCredential(demoRevoke.dataset.demoRevoke);
     const check = event.target.closest("[data-check-evidence]"); if (check) checkEvidence(check.dataset.checkEvidence);
