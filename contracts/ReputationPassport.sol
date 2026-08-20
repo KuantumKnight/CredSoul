@@ -76,6 +76,7 @@ contract ReputationPassport is ERC721, Ownable {
 
     function setIssuerStatus(address issuer, IssuerStatus status) external onlyOwner {
         require(issuer != address(0), "Invalid issuer");
+        require(uint8(status) <= uint8(IssuerStatus.Revoked), "Invalid issuer status");
         issuers[issuer].status = status;
         emit IssuerStatusChanged(issuer, status);
     }
