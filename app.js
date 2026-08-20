@@ -512,8 +512,8 @@ async function initialize() {
     if (event.target.closest("[data-action=share]")) openShareModal();
     if (event.target.closest("[data-action=transfer]")) openTransferModal();
     if (event.target.closest("[data-action=verify]")) activateView("verify");
-    if (event.target.closest("[data-action=export]")) { const blob = new Blob([JSON.stringify({ wallet: state.account, score: state.score, credentials: state.credentials }, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "verity-reputation-record.json"; link.click(); URL.revokeObjectURL(link.href); toast("Record exported", "A JSON copy of the current record was downloaded."); }
-    if (event.target.closest("[data-action=issuerExport]")) { const blob = new Blob([JSON.stringify({ issuer: state.account, credentials: state.issuerActivity }, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "verity-issuer-record.json"; link.click(); URL.revokeObjectURL(link.href); toast("Issuer record exported", "The current issuer activity was downloaded."); }
+    if (event.target.closest("[data-action=export]")) { downloadJSON("verity-reputation-record.json", { wallet: state.account, score: state.score, credentials: state.credentials }); toast("Record exported", "A JSON copy of the current record was downloaded."); }
+    if (event.target.closest("[data-action=issuerExport]")) { downloadJSON("verity-issuer-record.json", { issuer: state.account, credentials: state.issuerActivity }); toast("Issuer record exported", "The current issuer activity was downloaded."); }
     if (event.target.closest("[data-action=savePolicy]")) toast("Policy is contract-controlled", "Scoring policy editing is intentionally disabled until the policy contract is deployed.", "warn");
     if (event.target.closest("[data-action=viewAudit]")) toast("Audit log", "The latest platform events are shown in the table below.");
     if (event.target.closest("[data-action=requestIssuer]")) openIssuerRequestModal();
