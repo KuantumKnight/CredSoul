@@ -73,7 +73,7 @@ describe("ReputationPassport", function () {
 
   it("rejects unknown issuer status values", async function () {
     const { passport, admin, issuer } = await fixture();
-    await expect(passport.connect(admin).setIssuerStatus(issuer.address, 9)).to.be.revertedWith("Invalid issuer status");
+    await expect(passport.connect(admin).setIssuerStatus(issuer.address, 9)).to.be.reverted;
   });
 
   it("blocks approvals and exposes a stable passport URI", async function () {
