@@ -427,7 +427,7 @@ async function createProfile() {
   try { toast("Confirm transaction", "Create profile in your wallet to mint your one-per-wallet soulbound NFT.", "warn"); const tx = await state.contract.createProfile(); await tx.wait(); await refreshLive(); toast("Profile created", "Your soulbound reputation identity is now on-chain."); } catch (error) { toast("Profile creation failed", readableError(error), "error"); }
 }
 
-function readableError(error) { const text = error?.shortMessage || error?.reason || error?.message || "Unknown transaction error"; return text.replace(/^execution reverted: /i, "").slice(0, 180); }
+function readableError(error) { const code = error?.code || error?.info?.error?.code; if (code === 4001 || code === "ACTION_REJECTED") return "The wallet request was rejected."; const text = error?.shortMessage || error?.reason || error?.message || "Unknown transaction error"; return text.replace(/^execution reverted: /i, "").replace(/^user rejected.*/i, "The wallet request was rejected.").slice(0, 180); }
 
 async function hashFile(file) { const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer()); return `0x${[...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`; }
 
