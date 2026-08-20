@@ -451,7 +451,12 @@ async function copyText(value) {
   input.remove();
 }
 
-async function hashFile(file) { const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer()); return `0x${[...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`; }
+async function hashFile(file) {
+  if (!(file instanceof File) || !file.size) throw new Error("Choose a non-empty evidence file.");
+  if (!crypto?.subtle) throw new Error("This browser cannot calculate SHA-256 evidence hashes.");
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return `0x${[...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
 
 async function issueCredential(event) {
   event.preventDefault(); const form = new FormData(event.currentTarget); const type = form.get("type"); const file = form.get("evidence"); const level = Number(form.get("level") || 1); const score = Math.round((SCORE_BY_TYPE[type] || 25) * level); const evidenceHash = file instanceof File && file.size ? await hashFile(file) : `0x${"0".repeat(64)}`;
