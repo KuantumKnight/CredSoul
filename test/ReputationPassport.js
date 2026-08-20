@@ -47,4 +47,12 @@ describe("ReputationPassport", function () {
     expect(await passport.isCredentialActive(1)).to.equal(false);
     expect(await passport.reputationScore(holder.address)).to.equal(0n);
   });
+
+  it("verifies evidence hashes without storing the source file", async function () {
+    const { passport, issuer, holder } = await fixture();
+    const hash = ethers.id("evidence.pdf");
+    await passport.connect(issuer).issueCredential(holder.address, "Research", "Evidence record", "Hash check", 1723766400, 0, 30, hash);
+    expect(await passport.verifyEvidence(1, hash)).to.equal(true);
+    expect(await passport.verifyEvidence(1, ethers.id("different.pdf"))).to.equal(false);
+  });
 });
