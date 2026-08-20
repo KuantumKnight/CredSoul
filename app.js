@@ -87,6 +87,7 @@ const shortAddress = (address = "") => address ? `${address.slice(0, 6)}...${add
 const formatDate = (value) => { if (!value) return "No expiry"; const date = new Date(value); return Number.isNaN(date.valueOf()) ? "—" : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
 const parseDate = (value) => value ? new Date(value).getTime() : 0;
 const today = () => new Date().toISOString().slice(0, 10);
+const networkLabel = (deployment) => deployment ? `${deployment.network || "Configured network"} · chain ${deployment.chainId}` : "Contract not loaded";
 
 function toast(title, message, type = "success") {
   const item = document.createElement("div");
@@ -152,7 +153,7 @@ function renderModeDependentUi() {
 }
 
 function renderNetwork() {
-  const network = state.mode === "demo" ? "Demo scenario" : state.deployment?.network || "Contract not loaded";
+  const network = state.mode === "demo" ? "Demo scenario" : networkLabel(state.deployment);
   $("#networkLabel").textContent = network;
   $("#sidebarNetworkLabel").textContent = network;
 }
