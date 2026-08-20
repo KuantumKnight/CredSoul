@@ -39,4 +39,12 @@ describe("ReputationPassport", function () {
     await passport.connect(issuer).issueCredential(holder.address, "Academic", "Solidity Fundamentals", "Completed", 1723766400, 0, 40, hash);
     await expect(passport.connect(issuer).issueCredential(holder.address, "Academic", "Solidity Fundamentals", "Completed", 1723766400, 0, 40, hash)).to.be.revertedWith("Duplicate credential");
   });
+
+  it("removes expired credentials from the active score", async function () {
+    const { passport, issuer, holder } = await fixture();
+    const hash = ethers.id("expired.pdf");
+    await passport.connect(issuer).issueCredential(holder.address, "Academic", "Expired record", "No longer active", 1, 2, 50, hash);
+    expect(await passport.isCredentialActive(1)).to.equal(false);
+    expect(await passport.reputationScore(holder.address)).to.equal(0n);
+  });
 });
