@@ -12,3 +12,13 @@ button[aria-disabled="true"] {
   border-color: #e9a5ab !important;
   box-shadow: 0 0 0 3px #fff0f1 !important;
 }
+
+.chart-empty {
+  position: absolute;
+  inset: 27px 0 auto;
+  color: #64758a;
+  font: 8px "DM Mono", monospace;
+  text-align: center;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
