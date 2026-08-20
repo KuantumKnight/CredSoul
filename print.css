@@ -1,0 +1,26 @@
+@media print {
+  .sidebar,
+  .topbar,
+  .intro-actions,
+  .security-strip,
+  .toast-region,
+  .modal-backdrop,
+  .card-menu,
+  button {
+    display: none !important;
+  }
+
+  .app-shell,
+  .main-content,
+  .content-wrap,
+  .view {
+    display: block !important;
+    min-height: auto !important;
+    background: #fff !important;
+  }
+
+  .panel {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+}
