@@ -126,6 +126,10 @@ contract ReputationPassport is ERC721, Ownable {
     function getHolders() external view returns (address[] memory) { return _holders; }
     function getIssuerRegistry() external view returns (address[] memory) { return _issuerRegistry; }
 
+    function isIssuerVerified(address issuer) external view returns (bool) {
+        return issuers[issuer].status == IssuerStatus.Verified;
+    }
+
     function isCredentialActive(uint256 credentialId) public view returns (bool) {
         Credential memory credential = _credentials[credentialId];
         return credential.id != 0 && credential.status == CredentialStatus.Active && (credential.expiryDate == 0 || credential.expiryDate > block.timestamp);
