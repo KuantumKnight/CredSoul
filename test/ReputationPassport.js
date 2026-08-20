@@ -75,4 +75,11 @@ describe("ReputationPassport", function () {
     const { passport, admin, issuer } = await fixture();
     await expect(passport.connect(admin).setIssuerStatus(issuer.address, 9)).to.be.revertedWith("Invalid issuer status");
   });
+
+  it("blocks approvals and exposes a stable passport URI", async function () {
+    const { passport, holder } = await fixture();
+    expect(await passport.tokenURI(1)).to.equal("https://verity.local/passport/1");
+    await expect(passport.connect(holder).approve(holder.address, 1)).to.be.revertedWith("Soulbound token is non-transferable");
+    await expect(passport.connect(holder).setApprovalForAll(holder.address, true)).to.be.revertedWith("Soulbound token is non-transferable");
+  });
 });
