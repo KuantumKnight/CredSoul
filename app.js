@@ -459,7 +459,7 @@ async function hashFile(file) {
 }
 
 async function issueCredential(event) {
-  event.preventDefault(); const form = new FormData(event.currentTarget); const type = form.get("type"); const file = form.get("evidence"); const level = Number(form.get("level") || 1); const score = Math.round((SCORE_BY_TYPE[type] || 25) * level); const evidenceHash = file instanceof File && file.size ? await hashFile(file) : `0x${"0".repeat(64)}`;
+  event.preventDefault(); const form = new FormData(event.currentTarget); const type = form.get("type"); const file = form.get("evidence"); const level = Number(form.get("level") || 1); const score = Math.round((SCORE_BY_TYPE[type] || 25) * level); const evidenceHash = file instanceof File && file.size ? await hashFile(file) : ZERO_EVIDENCE_HASH;
   const raw = { recipient: String(form.get("recipient")).trim(), category: String(form.get("category")), title: String(form.get("title")).trim(), description: String(form.get("description")).trim(), issueDate: String(form.get("issueDate") || today()), expiryDate: String(form.get("expiry") || ""), score, evidenceHash, issuer: state.account, issuerName: state.mode === "demo" ? "VIT Chennai" : "Connected issuer", status: "ACTIVE", evidenceName: file instanceof File ? file.name : "" };
   if (!ethers.isAddress(raw.recipient)) { toast("Invalid recipient", "Use a valid EVM wallet address.", "error"); return; }
   if (!raw.title || !raw.description) { toast("Missing credential data", "Title and description are required.", "error"); return; }
