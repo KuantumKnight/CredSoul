@@ -9,6 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract ReputationPassport is ERC721, Ownable {
     enum IssuerStatus { None, Pending, Verified, Rejected, Suspended, Revoked }
     enum CredentialStatus { Active, Revoked }
+    uint32 public constant MAX_CREDENTIAL_SCORE = 1000;
 
     struct Issuer {
         string name;
@@ -92,7 +93,7 @@ contract ReputationPassport is ERC721, Ownable {
         require(issuers[msg.sender].status == IssuerStatus.Verified, "Issuer is not verified");
         require(passportToken[recipient] != 0, "Recipient has no profile");
         require(bytes(title).length > 1, "Credential title required");
-        require(score > 0, "Score must be positive");
+        require(score > 0 && score <= MAX_CREDENTIAL_SCORE, "Score must be between 1 and 1000");
         require(expiryDate == 0 || expiryDate > issueDate, "Invalid expiry");
         bytes32 fingerprint = keccak256(abi.encode(recipient, msg.sender, category, title, issueDate, evidenceHash));
         require(!_credentialFingerprints[fingerprint], "Duplicate credential");
