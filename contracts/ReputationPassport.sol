@@ -135,6 +135,12 @@ contract ReputationPassport is ERC721, Ownable {
         return credential.id != 0 && credential.status == CredentialStatus.Active && (credential.expiryDate == 0 || credential.expiryDate > block.timestamp);
     }
 
+    function getCredentialStatus(uint256 credentialId) external view returns (CredentialStatus status, bool active) {
+        Credential memory credential = _credentials[credentialId];
+        require(credential.id != 0, "Credential not found");
+        return (credential.status, isCredentialActive(credentialId));
+    }
+
     function reputationScore(address holder) public view returns (uint256 total) {
         uint256[] memory ids = _holderCredentials[holder];
         for (uint256 i = 0; i < ids.length; i++) if (isCredentialActive(ids[i])) total += _credentials[ids[i]].score;
