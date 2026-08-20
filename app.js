@@ -189,6 +189,54 @@ function renderScore() {
   $("#scoreSync").textContent = state.mode === "demo" ? "Local seeded record" : state.account ? "Read from contract" : "Connect wallet";
   $("#reputationMiniScore").textContent = state.score; $("#reputationMiniTier").textContent = tier; $("#ledgerTotal").textContent = state.score;
   $("#chainMeta").textContent = state.mode === "demo" ? "DEMO TIMELINE" : state.blockNumber ? `BLOCK #${state.blockNumber.toLocaleString()}` : "AWAITING WALLET";
+  renderScoreChart();
+}
+
+function scoreTimeline() {
+  let runningScore = 0;
+  return state.credentials
+    .filter((credential) => credentialStatus(credential) === "ACTIVE")
+    .sort((a, b) => parseDate(a.issueDate) - parseDate(b.issueDate))
+    .map((credential) => {
+      runningScore += Number(credential.score) || 0;
+      return { date: credential.issueDate, score: runningScore, title: credential.title };
+    });
+}
+
+function renderScoreChart() {
+  const fill = $("#scoreChartFill");
+  const line = $("#scoreChartLine");
+  const dots = $("#scoreChartDots");
+  const labels = $("#scoreChartLabels");
+  const empty = $("#scoreChartEmpty");
+  const description = $("#scoreChartDescription");
+  if (!fill || !line || !dots || !labels || !empty || !description) return;
+
+  const points = scoreTimeline();
+  empty.hidden = points.length > 0;
+  empty.textContent = state.mode === "demo" ? "No active demo credential history yet." : state.account ? "No active on-chain credential history yet." : "Connect a wallet to load on-chain history.";
+  if (!points.length) {
+    fill.removeAttribute("d");
+    line.removeAttribute("d");
+    dots.replaceChildren();
+    labels.innerHTML = "<span>NO DATA</span>";
+    description.textContent = empty.textContent;
+    return;
+  }
+
+  const plotted = [{ date: points[0].date, score: 0, title: "Starting point" }, ...points];
+  const maxScore = Math.max(1000, plotted[plotted.length - 1].score);
+  const coordinates = plotted.map((point, index) => ({
+    ...point,
+    x: plotted.length === 1 ? 0 : (index / (plotted.length - 1)) * 600,
+    y: 130 - (Math.min(maxScore, point.score) / maxScore) * 118
+  }));
+  const linePath = coordinates.map((point, index) => `${index ? "L" : "M"}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ");
+  fill.setAttribute("d", `${linePath} L600 145 L0 145 Z`);
+  line.setAttribute("d", linePath);
+  dots.innerHTML = coordinates.slice(1).map((point) => `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="5" class="chart-point"><title>${esc(formatDate(point.date))}: ${point.score} points · ${esc(point.title)}</title></circle>`).join("");
+  labels.innerHTML = coordinates.filter((_, index) => index === 0 || index === coordinates.length - 1 || index % Math.max(1, Math.ceil(coordinates.length / 4)) === 0).slice(0, 5).map((point, index) => `<span>${index === 0 ? "START" : esc(formatDate(point.date))}</span>`).join("");
+  description.textContent = `${state.mode === "demo" ? "Demo" : "Live"} score history from ${points.length} active credential${points.length === 1 ? "" : "s"}. Current score: ${state.score} points.`;
 }
 
 function renderBreakdown() {
