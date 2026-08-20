@@ -438,6 +438,19 @@ function downloadJSON(filename, payload) {
   URL.revokeObjectURL(url);
 }
 
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(value);
+  const input = document.createElement("textarea");
+  input.value = value;
+  input.setAttribute("readonly", "true");
+  input.style.position = "fixed";
+  input.style.opacity = "0";
+  document.body.append(input);
+  input.select();
+  document.execCommand("copy");
+  input.remove();
+}
+
 async function hashFile(file) { const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer()); return `0x${[...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}`; }
 
 async function issueCredential(event) {
