@@ -132,6 +132,8 @@ contract ReputationPassport is ERC721, Ownable {
 
     function getHolderCredentials(address holder) external view returns (uint256[] memory) { return _holderCredentials[holder]; }
     function getIssuerCredentials(address issuer) external view returns (uint256[] memory) { return _issuerCredentials[issuer]; }
+    function getHolderCredentialCount(address holder) external view returns (uint256) { return _holderCredentials[holder].length; }
+    function getIssuerCredentialCount(address issuer) external view returns (uint256) { return _issuerCredentials[issuer].length; }
     function getHolders() external view returns (address[] memory) { return _holders; }
     function getIssuerRegistry() external view returns (address[] memory) { return _issuerRegistry; }
 
