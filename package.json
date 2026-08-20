@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Wallet-connected soulbound reputation passports with a safe local demo mode",
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "scripts": {
     "chain": "hardhat node",
