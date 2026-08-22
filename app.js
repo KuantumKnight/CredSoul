@@ -61,6 +61,7 @@ const state = {
   account: "",
   profileExists: false,
   credentials: [],
+  allCredentials: [],
   score: 0,
   categories: Object.fromEntries(CATEGORY_LIST.map((name) => [name, 0])),
   issuerNames: new Map(),
@@ -123,6 +124,7 @@ function setMode(mode) {
     state.account = DEMO_WALLET;
     state.profileExists = true;
     state.credentials = DEMO_CREDENTIALS.map((credential) => ({ ...credential }));
+    state.allCredentials = state.credentials.map((credential) => ({ ...credential }));
     state.score = state.credentials.filter((credential) => credentialStatus(credential) === "ACTIVE").reduce((sum, credential) => sum + credential.score, 0);
     state.issuerStatus = 2;
     state.issuerNames = new Map(Object.entries({ [DEMO_ISSUERS.vit]: "VIT Chennai", [DEMO_ISSUERS.cloud]: "CloudCert Pro", [DEMO_ISSUERS.lab]: "VIT Research Cell" }));
@@ -134,7 +136,7 @@ function setMode(mode) {
     renderAll();
     toast("Demo mode enabled", "Seeded data is local to this browser. Switch back to live mode for wallet and contract data.", "warn");
   } else {
-    state.account = ""; state.profileExists = false; state.credentials = []; state.score = 0; state.issuerStatus = 0; state.issuerNames = new Map(); state.issuerActivity = []; state.issuerCredentials = []; state.liveRequests = []; state.owner = ""; state.blockNumber = 0; calculateCategories(); renderAll();
+    state.account = ""; state.profileExists = false; state.credentials = []; state.allCredentials = []; state.score = 0; state.issuerStatus = 0; state.issuerNames = new Map(); state.issuerActivity = []; state.issuerCredentials = []; state.liveRequests = []; state.owner = ""; state.blockNumber = 0; calculateCategories(); renderAll();
     toast("Live mode enabled", "No demo data is loaded. Connect a wallet to read the deployed contract.");
     if (state.provider) refreshLive();
   }
@@ -318,10 +320,11 @@ function renderIssuerMetrics() {
 }
 
 function renderAdmin() {
-  const holderCount = state.mode === "demo" ? new Set(state.credentials.map((credential) => credential.recipient)).size : state.profileExists ? 1 : 0;
-  const credentialCount = state.mode === "demo" ? state.credentials.length : state.credentials.length;
-  const issuerCount = state.mode === "demo" ? new Set(state.credentials.map((credential) => credential.issuer)).size : state.issuerStatus === 2 ? 1 : 0;
-  const revocationRate = credentialCount ? Math.round(state.credentials.filter((credential) => credentialStatus(credential) === "REVOKED").length / credentialCount * 100) : 0;
+  const networkCredentials = state.mode === "demo" ? state.credentials : state.allCredentials;
+  const holderCount = new Set(networkCredentials.map((credential) => credential.recipient)).size;
+  const credentialCount = networkCredentials.length;
+  const issuerCount = new Set(networkCredentials.map((credential) => credential.issuer)).size;
+  const revocationRate = credentialCount ? Math.round(networkCredentials.filter((credential) => credentialStatus(credential) === "REVOKED").length / credentialCount * 100) : 0;
   $("#adminHolderCount").textContent = holderCount; $("#adminCredentialCount").textContent = credentialCount; $("#adminIssuerCount").textContent = issuerCount; $("#adminRevocationRate").textContent = `${revocationRate}%`;
   const context = state.mode === "demo" ? "demo record" : state.account ? "connected wallet" : "wallet required";
   $("#adminHolderContext").textContent = context; $("#adminCredentialContext").textContent = context; $("#adminIssuerContext").textContent = context; $("#adminRevocationContext").textContent = context;
@@ -330,7 +333,8 @@ function renderAdmin() {
   const requests = state.mode === "demo" ? state.demoIssuers : state.liveRequests || [];
   $("#requestCount").textContent = `${requests.length} pending`;
   $("#issuerRequests").innerHTML = requests.length ? requests.map((request) => `<div class="request-row"><div class="request-logo">◎</div><div class="request-copy"><strong>${esc(request.name)}</strong><span>${esc(request.type)} · ${shortAddress(request.address)}</span></div><div class="request-actions"><button data-approve-issuer="${esc(request.address)}">Approve</button><button class="reject" data-reject-issuer="${esc(request.address)}">Reject</button></div></div>`).join("") : `<div class="empty-state">No pending issuer requests.</div>`;
-  const activities = state.mode === "demo" ? state.credentials.slice(0, 3).map((credential) => ({ event: "Credential record", actor: credential.issuerName, reference: credential.id, time: formatDate(credential.issueDate), status: credentialStatus(credential), tone: credentialStatus(credential) === "REVOKED" ? "red-bg" : "green-bg" })) : state.credentials.slice(0, 5).map((credential) => ({ event: credentialStatus(credential) === "REVOKED" ? "Credential revoked" : "Credential issued", actor: credential.issuerName || shortAddress(credential.issuer), reference: credential.id, time: formatDate(credential.issueDate), status: credentialStatus(credential), tone: credentialStatus(credential) === "REVOKED" ? "red-bg" : "green-bg" }));
+  const recentCredentials = state.mode === "demo" ? networkCredentials.slice(0, 5) : networkCredentials.slice(-5).reverse();
+  const activities = recentCredentials.map((credential) => ({ event: state.mode === "demo" ? "Credential record" : credentialStatus(credential) === "REVOKED" ? "Credential revoked" : "Credential issued", actor: credential.issuerName || shortAddress(credential.issuer), reference: credential.id, time: formatDate(credential.issueDate), status: credentialStatus(credential), tone: credentialStatus(credential) === "REVOKED" ? "red-bg" : "green-bg" }));
   $("#auditTable").innerHTML = activities.length ? `<div class="audit-row table-header"><span>Event</span><span>Actor</span><span>Reference</span><span>Date</span><span>Status</span></div>${activities.map((item) => `<div class="audit-row"><span><i class="audit-icon ${item.tone}">${item.tone === "red-bg" ? "×" : "◇"}</i>${esc(item.event)}</span><span>${esc(item.actor)}</span><span class="mono">${esc(item.reference)}</span><span>${esc(item.time)}</span><span class="table-status ${item.tone === "red-bg" ? "revoked" : "valid"}">${esc(item.status)}</span></div>`).join("")}` : `<div class="empty-state">No on-chain activity for this wallet.</div>`;
 }
 
@@ -387,7 +391,7 @@ async function initializeClerk() {
     await state.clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
     state.user = state.clerk.user || null;
     state.authReady = true;
-    state.clerk.addListener(({ user }) => { state.user = user || null; if (!user && state.mode === "live" && !state.publicProfile) { state.account = ""; state.profileExists = false; state.credentials = []; state.score = 0; calculateCategories(); } renderAll(); });
+    state.clerk.addListener(({ user }) => { state.user = user || null; if (!user && state.mode === "live" && !state.publicProfile) { state.account = ""; state.profileExists = false; state.credentials = []; state.allCredentials = []; state.score = 0; calculateCategories(); } renderAll(); });
   } catch (error) { state.authReady = false; toast("Authentication unavailable", readableError(error), "error"); }
 }
 
@@ -477,7 +481,13 @@ async function refreshLive() {
   if (state.mode !== "live" || !state.contract || !state.account) { renderAll(); return; }
   try {
     const tokenId = await state.contract.passportToken(state.account); state.profileExists = tokenId !== 0n;
-    state.credentials = []; state.issuerCredentials = []; state.score = 0; state.issuerNames = new Map(); state.owner = await state.contract.owner(); state.blockNumber = state.provider?.getBlockNumber ? await state.provider.getBlockNumber() : 0;
+    state.credentials = []; state.allCredentials = []; state.issuerCredentials = []; state.score = 0; state.issuerNames = new Map(); state.owner = await state.contract.owner(); state.blockNumber = state.provider?.getBlockNumber ? await state.provider.getBlockNumber() : 0;
+    const totalCredentials = Number(await state.contract.totalCredentials());
+    if (totalCredentials > 0) {
+      const ids = Array.from({ length: totalCredentials }, (_, index) => index + 1);
+      const records = await state.contract.getCredentials(ids);
+      for (const raw of records) state.allCredentials.push(await liveCredential(raw));
+    }
     const issuer = await state.contract.issuers(state.account); state.issuerStatus = Number(issuer.status);
     if (state.profileExists) {
       const ids = await state.contract.getHolderCredentials(state.account);
@@ -548,8 +558,8 @@ async function issueCredential(event) {
   markFieldError(recipientField, false);
   if (!raw.title || !raw.description) { toast("Missing credential data", "Title and description are required.", "error"); return; }
   if (raw.expiryDate && parseDate(raw.expiryDate) <= parseDate(raw.issueDate)) { toast("Invalid expiration", "Expiration must be later than the issue date.", "error"); return; }
-  if (state.mode === "demo") { const next = state.credentials.length + 1; const credential = { ...raw, id: `VC-DEMO-${String(next).padStart(4, "0")}`, issuer: DEMO_ISSUERS.vit, issuerName: "VIT Chennai" }; state.credentials.unshift(credential); state.score = state.credentials.filter((item) => credentialStatus(item) === "ACTIVE").reduce((sum, item) => sum + item.score, 0); calculateCategories(); renderAll(); event.currentTarget.reset(); toast("Demo credential issued", `Added ${raw.title} with +${score} points. This did not touch a blockchain.`, "warn"); return; }
-  if (!state.contract || !state.account) { toast("Connect issuer wallet", "Live issuance requires a wallet and an approved issuer address.", "error"); return; }
+  if (state.mode === "demo") { const next = state.credentials.length + 1; const credential = { ...raw, id: `VC-DEMO-${String(next).padStart(4, "0")}`, issuer: DEMO_ISSUERS.vit, issuerName: "VIT Chennai" }; state.credentials.unshift(credential); state.allCredentials = state.credentials.map((item) => ({ ...item })); state.issuerCredentials = state.credentials.filter((item) => item.issuer === DEMO_ISSUERS.vit); state.issuerActivity = state.issuerCredentials.slice(0, 5); state.score = state.credentials.filter((item) => credentialStatus(item) === "ACTIVE").reduce((sum, item) => sum + item.score, 0); calculateCategories(); renderAll(); event.currentTarget.reset(); toast("Demo credential issued", `Added ${raw.title} with +${score} points. This did not touch a blockchain.`, "warn"); return; }
+  if (!state.contract || !state.account) { const connected = await connectWallet(); if (!connected || !state.contract || !state.account) return; }
   try {
     const record = await state.contract.issuers(state.account); if (Number(record.status) !== 2) { toast("Issuer not approved", "Submit an issuer request, then have the contract owner approve this wallet.", "error"); return; }
     const issueTimestamp = Math.floor(parseDate(raw.issueDate) / 1000); const expiryTimestamp = raw.expiryDate ? Math.floor(parseDate(raw.expiryDate) / 1000) : 0;
@@ -593,7 +603,7 @@ async function requestIssuer(event) { event.preventDefault(); const form = new F
 function handleWalletEvents() {
   if (!window.ethereum?.on) return;
   window.ethereum.on("accountsChanged", async (accounts) => {
-    if (!accounts.length) { state.account = ""; state.signer = null; state.contract = null; state.profileExists = false; state.credentials = []; state.score = 0; calculateCategories(); renderAll(); return; }
+    if (!accounts.length) { state.account = ""; state.signer = null; state.contract = null; state.profileExists = false; state.credentials = []; state.allCredentials = []; state.score = 0; calculateCategories(); renderAll(); return; }
     if (state.mode !== "live" || !state.deployment?.address) return;
     try {
       state.provider ||= new ethers.BrowserProvider(window.ethereum);
