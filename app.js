@@ -9,7 +9,7 @@ const ABI = [
   "function revokeCredential(uint256 credentialId,string reason)",
   "function passportToken(address) view returns (uint256)",
   "function issuers(address) view returns (string name,string website,string organizationType,uint8 status,uint64 requestedAt)",
-  "function getCredential(uint256) view returns (uint256 id,address recipient,address issuer,string category,string title,string description,uint64 issueDate,uint64 expiryDate,uint32 score,bytes32 evidenceHash,uint8 status)",
+  "function getCredential(uint256) view returns (tuple(uint256 id,address recipient,address issuer,string category,string title,string description,uint64 issueDate,uint64 expiryDate,uint32 score,bytes32 evidenceHash,uint8 status))",
   "function getHolderCredentials(address) view returns (uint256[])",
   "function getIssuerCredentials(address) view returns (uint256[])",
   "function getHolderCredentialCount(address) view returns (uint256)",
