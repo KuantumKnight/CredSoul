@@ -458,7 +458,7 @@ async function ensureWalletNetwork() {
 }
 
 async function connectWallet() {
-  if (state.mode === "demo") { setMode("live"); return; }
+  if (state.mode === "demo") { setMode("live"); return false; }
   if (!state.publicProfile && !state.user) { await openAuthControl(); toast("Sign in first", "Clerk authentication is required before linking a wallet.", "warn"); return; }
   if (!window.ethereum) { toast("Wallet not detected", "Install MetaMask or another EIP-1193 wallet, then try again.", "error"); return; }
   if (!state.deployment?.address) { toast("Contract not configured", "Run npm run chain, then npm run deploy. The app reads public/deployment.json.", "error"); return; }
@@ -469,8 +469,8 @@ async function connectWallet() {
     state.signer = await state.provider.getSigner(); state.account = await state.signer.getAddress();
     await syncWalletToClerk();
     state.contract = new ethers.Contract(state.deployment.address, ABI, state.signer);
-    await refreshLive(); toast("Wallet connected", `Reading live data for ${shortAddress(state.account)}.`);
-  } catch (error) { toast("Wallet connection failed", readableError(error), "error"); }
+    await refreshLive(); toast("Wallet connected", `Reading live data for ${shortAddress(state.account)}.`); return true;
+  } catch (error) { toast("Wallet connection failed", readableError(error), "error"); return false; }
 }
 
 async function refreshLive() {
@@ -582,18 +582,28 @@ async function revokeCredential(id) {
 
 async function setIssuerStatus(address, status) {
   if (state.mode === "demo") { state.demoIssuers = state.demoIssuers.filter((item) => item.address !== address); renderAdmin(); toast(status === 2 ? "Demo issuer approved" : "Demo request rejected", "This action is local to demo mode.", "warn"); return; }
-  if (!state.contract) return connectWallet(); try { const tx = await state.contract.setIssuerStatus(address, status); await tx.wait(); await refreshLive(); toast(status === 2 ? "Issuer approved" : "Issuer rejected", "The issuer registry was updated on-chain."); } catch (error) { toast("Issuer update failed", readableError(error), "error"); }
+  if (!state.contract) { const connected = await connectWallet(); if (!connected || !state.contract) return; }
+  try { const tx = await state.contract.setIssuerStatus(address, status); await tx.wait(); await refreshLive(); toast(status === 2 ? "Issuer approved" : "Issuer rejected", "The issuer registry was updated on-chain."); } catch (error) { toast("Issuer update failed", readableError(error), "error"); }
 }
 
 function openIssuerRequestModal() { openModal(`<div class="modal-header"><div><span class="section-kicker">Issuer registry</span><h2>Request issuer status</h2></div><button class="modal-close" data-close-modal>×</button></div><p>Submit an organization identity for administrator review. This creates a pending on-chain request.</p><form id="issuerRequestForm"><label class="modal-field">Organization name<input required name="name" placeholder="Your organization" /></label><label class="modal-field">Website<input name="website" placeholder="https://" /></label><label class="modal-field">Organization type<select name="type"><option>University</option><option>Company</option><option>Certification body</option><option>Community organization</option><option>Research institution</option></select></label><button class="button primary" type="submit">Submit request <span>→</span></button></form>`); }
 
-async function requestIssuer(event) { event.preventDefault(); const form = new FormData(event.currentTarget); if (state.mode === "demo") { closeModal(); toast("Demo request submitted", "A pending issuer request was added to the local scenario.", "warn"); return; } if (!state.contract) return connectWallet(); try { const tx = await state.contract.requestIssuer(form.get("name"), form.get("website"), form.get("type")); await tx.wait(); closeModal(); await refreshLive(); toast("Issuer request submitted", "The contract owner can now approve this wallet."); } catch (error) { toast("Request failed", readableError(error), "error"); } }
+async function requestIssuer(event) { event.preventDefault(); const form = new FormData(event.currentTarget); if (state.mode === "demo") { closeModal(); toast("Demo request submitted", "A pending issuer request was added to the local scenario.", "warn"); return; } if (!state.contract) { const connected = await connectWallet(); if (!connected || !state.contract) return; } try { toast("Confirm issuer request", "Review and confirm the request in MetaMask.", "warn"); const tx = await state.contract.requestIssuer(form.get("name"), form.get("website"), form.get("type")); await tx.wait(); closeModal(); await refreshLive(); toast("Issuer request submitted", "The contract owner can now approve this wallet."); } catch (error) { toast("Request failed", readableError(error), "error"); } }
 
 function handleWalletEvents() {
   if (!window.ethereum?.on) return;
-  window.ethereum.on("accountsChanged", (accounts) => {
+  window.ethereum.on("accountsChanged", async (accounts) => {
     if (!accounts.length) { state.account = ""; state.signer = null; state.contract = null; state.profileExists = false; state.credentials = []; state.score = 0; calculateCategories(); renderAll(); return; }
-    if (state.mode === "live") refreshLive();
+    if (state.mode !== "live" || !state.deployment?.address) return;
+    try {
+      state.provider ||= new ethers.BrowserProvider(window.ethereum);
+      state.signer = await state.provider.getSigner();
+      state.account = await state.signer.getAddress();
+      await syncWalletToClerk();
+      state.contract = new ethers.Contract(state.deployment.address, ABI, state.signer);
+      await refreshLive();
+      toast("Wallet switched", `Reading live data for ${shortAddress(state.account)}.`);
+    } catch (error) { toast("Wallet switch failed", readableError(error), "error"); }
   });
   window.ethereum.on("chainChanged", () => { if (state.mode === "live") window.location.reload(); });
 }
