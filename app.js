@@ -36,6 +36,7 @@ const MODE_KEY = "verity-mode";
 const DEFAULT_LOCAL_RPC = "http://127.0.0.1:8545";
 const ZERO_EVIDENCE_HASH = `0x${"0".repeat(64)}`;
 const APP_NAME = "Verity";
+const HARDHAT_CHAIN_ID = "0x7a69";
 
 const DEMO_WALLET = "0x9f3a7b24d031cee6b9c812000000000000000000";
 const DEMO_ISSUERS = { vit: "0x1111111111111111111111111111111111111111", cloud: "0x2222222222222222222222222222222222222222", lab: "0x3333333333333333333333333333333333333333" };
@@ -172,7 +173,7 @@ function renderIdentity() {
   const clerkName = state.user ? [state.user.firstName, state.user.lastName].filter(Boolean).join(" ") || state.user.username || "Verified holder" : "";
   const name = state.mode === "demo" ? "Sarvesh M." : state.publicProfile ? "Public holder" : clerkName || (hasWallet ? "Connected holder" : "Wallet not connected");
   const initials = state.mode === "demo" ? "SM" : state.publicProfile ? "↗" : state.user ? (state.user.firstName || state.user.username || "U").slice(0, 2).toUpperCase() : hasWallet ? state.account.slice(2, 4).toUpperCase() : "—";
-  $("#identityName").textContent = name; $("#identityInitials").textContent = initials; $("#walletLabel").textContent = state.mode === "demo" ? "Sarvesh M." : hasWallet ? "Connected wallet" : "Connect wallet"; $("#walletAddress").textContent = shortAddress(state.account) || "No wallet";
+  $("#identityName").textContent = name; $("#identityInitials").textContent = initials; $("#walletLabel").textContent = state.mode === "demo" ? "Sarvesh M." : hasWallet ? "Connected wallet" : "Connect MetaMask"; $("#walletAddress").textContent = shortAddress(state.account) || "No wallet";
   $("#identityAddress").innerHTML = `${esc(shortAddress(state.account) || "Connect a wallet to continue")} <button class="copy-button" data-copy="${esc(state.account)}">⧉</button>`;
   $("#identityOrg").textContent = state.mode === "demo" ? "Vellore Institute of Technology" : state.deployment ? `Live contract · ${shortAddress(state.deployment.address)}` : "Deploy the contract and load deployment.json";
   $("#sbtId").textContent = state.profileExists ? (state.mode === "demo" ? "#VT-00842" : `#${state.account ? state.account.slice(-6).toUpperCase() : "—"}`) : "—";
@@ -428,6 +429,34 @@ async function syncWalletToClerk() {
   } catch (error) { toast("Wallet link not saved", "The wallet is connected, but Clerk metadata could not be updated.", "warn"); }
 }
 
+function walletNetworkConfig() {
+  if (!state.deployment?.chainId) return null;
+  const isLocal = Number(state.deployment.chainId) === 31337;
+  return {
+    chainId: isLocal ? HARDHAT_CHAIN_ID : `0x${Number(state.deployment.chainId).toString(16)}`,
+    chainName: isLocal ? "Hardhat Local" : state.deployment.network || "Configured network",
+    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    rpcUrls: [state.deployment.rpcUrl || DEFAULT_LOCAL_RPC],
+    ...(isLocal ? {} : { blockExplorerUrls: ["https://sepolia.etherscan.io"] })
+  };
+}
+
+async function ensureWalletNetwork() {
+  const expected = walletNetworkConfig();
+  if (!expected || !state.provider) return true;
+  const network = await state.provider.getNetwork();
+  if (Number(network.chainId) === Number(state.deployment.chainId)) return true;
+  try {
+    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: expected.chainId }] });
+  } catch (error) {
+    if (error?.code !== 4902) throw error;
+    await window.ethereum.request({ method: "wallet_addEthereumChain", params: [expected] });
+  }
+  const updatedNetwork = await state.provider.getNetwork();
+  if (Number(updatedNetwork.chainId) !== Number(state.deployment.chainId)) throw new Error(`Switch MetaMask to ${expected.chainName} (chain ${state.deployment.chainId}).`);
+  return true;
+}
+
 async function connectWallet() {
   if (state.mode === "demo") { setMode("live"); return; }
   if (!state.publicProfile && !state.user) { await openAuthControl(); toast("Sign in first", "Clerk authentication is required before linking a wallet.", "warn"); return; }
@@ -436,10 +465,10 @@ async function connectWallet() {
   try {
     state.provider = new ethers.BrowserProvider(window.ethereum);
     await state.provider.send("eth_requestAccounts", []);
+    await ensureWalletNetwork();
     state.signer = await state.provider.getSigner(); state.account = await state.signer.getAddress();
     await syncWalletToClerk();
     state.contract = new ethers.Contract(state.deployment.address, ABI, state.signer);
-    const network = await state.provider.getNetwork(); if (state.deployment.chainId && Number(network.chainId) !== Number(state.deployment.chainId)) { toast("Wrong network", `Switch your wallet to chain ID ${state.deployment.chainId}.`, "error"); return; }
     await refreshLive(); toast("Wallet connected", `Reading live data for ${shortAddress(state.account)}.`);
   } catch (error) { toast("Wallet connection failed", readableError(error), "error"); }
 }
