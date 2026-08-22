@@ -296,7 +296,9 @@ function renderIssuerActivity() {
   const issuerStatus = $("#issuerStatus");
   if (issuerStatus) {
     const verified = state.mode === "demo" || state.issuerStatus === 2;
-    issuerStatus.innerHTML = `<span class="status-dot"></span> ${verified ? "Issuer verified · Manage status" : state.issuerStatus === 1 ? "Issuer request pending" : "Request issuer status"}`;
+    const unavailable = state.mode === "live" && !state.deployment?.address;
+    issuerStatus.innerHTML = `<span class="status-dot"></span> ${unavailable ? "Live contract required" : verified ? "Issuer verified · Manage status" : state.issuerStatus === 1 ? "Issuer request pending" : "Request issuer status"}`;
+    issuerStatus.title = unavailable ? "This deployment has no public contract configured. Open the local app or deploy a public testnet contract." : "";
   }
   const trustCopy = $("#issuerTrustCopy");
   if (trustCopy) trustCopy.textContent = state.mode === "demo" ? "Demo organization · local-only scenario" : state.issuerStatus === 2 ? "Approved on-chain by the Verity administrator" : "Connect a wallet to load issuer status";
@@ -465,7 +467,7 @@ async function connectWallet() {
   if (state.mode === "demo") { setMode("live"); return false; }
   if (!state.publicProfile && !state.user) { await openAuthControl(); toast("Sign in first", "Clerk authentication is required before linking a wallet.", "warn"); return; }
   if (!window.ethereum) { toast("Wallet not detected", "Install MetaMask or another EIP-1193 wallet, then try again.", "error"); return; }
-  if (!state.deployment?.address) { toast("Contract not configured", "Run npm run chain, then npm run deploy. The app reads public/deployment.json.", "error"); return; }
+  if (!state.deployment?.address) { toast("Live contract not configured", "This deployment cannot send issuer requests yet. Use http://127.0.0.1:5173 for the local chain or configure a public testnet contract.", "error"); return false; }
   try {
     state.provider = new ethers.BrowserProvider(window.ethereum);
     await state.provider.send("eth_requestAccounts", []);
@@ -596,9 +598,15 @@ async function setIssuerStatus(address, status) {
   try { const tx = await state.contract.setIssuerStatus(address, status); await tx.wait(); await refreshLive(); toast(status === 2 ? "Issuer approved" : "Issuer rejected", "The issuer registry was updated on-chain."); } catch (error) { toast("Issuer update failed", readableError(error), "error"); }
 }
 
-function openIssuerRequestModal() { openModal(`<div class="modal-header"><div><span class="section-kicker">Issuer registry</span><h2>Request issuer status</h2></div><button class="modal-close" data-close-modal>×</button></div><p>Submit an organization identity for administrator review. This creates a pending on-chain request.</p><form id="issuerRequestForm"><label class="modal-field">Organization name<input required name="name" placeholder="Your organization" /></label><label class="modal-field">Website<input name="website" placeholder="https://" /></label><label class="modal-field">Organization type<select name="type"><option>University</option><option>Company</option><option>Certification body</option><option>Community organization</option><option>Research institution</option></select></label><button class="button primary" type="submit">Submit request <span>→</span></button></form>`); }
+function openIssuerRequestModal() {
+  if (state.mode === "live" && !state.deployment?.address) {
+    openModal(`<div class="modal-header"><div><span class="section-kicker">Live contract unavailable</span><h2>Issuer requests are not configured here</h2></div><button class="modal-close" data-close-modal>×</button></div><p>This deployed site has no public ReputationPassport contract address, so MetaMask has nothing to call.</p><div class="transfer-warning"><strong>For the local blockchain demo</strong><br />Open <span class="mono">http://127.0.0.1:5173/</span> while <span class="mono">npm run chain</span> is running, or deploy a public Sepolia contract and configure its address.</div><button class="button primary" data-close-modal>Close</button>`);
+    return;
+  }
+  openModal(`<div class="modal-header"><div><span class="section-kicker">Issuer registry</span><h2>Request issuer status</h2></div><button class="modal-close" data-close-modal>×</button></div><p>Submit an organization identity for administrator review. This creates a pending on-chain request.</p><form id="issuerRequestForm"><label class="modal-field">Organization name<input required name="name" placeholder="Your organization" /></label><label class="modal-field">Website<input name="website" placeholder="https://" /></label><label class="modal-field">Organization type<select name="type"><option>University</option><option>Company</option><option>Certification body</option><option>Community organization</option><option>Research institution</option></select></label><button class="button primary" type="submit">Submit request <span>→</span></button></form>`);
+}
 
-async function requestIssuer(event) { event.preventDefault(); const form = new FormData(event.currentTarget); if (state.mode === "demo") { closeModal(); toast("Demo request submitted", "A pending issuer request was added to the local scenario.", "warn"); return; } if (!state.contract) { const connected = await connectWallet(); if (!connected || !state.contract) return; } try { toast("Confirm issuer request", "Review and confirm the request in MetaMask.", "warn"); const tx = await state.contract.requestIssuer(form.get("name"), form.get("website"), form.get("type")); await tx.wait(); closeModal(); await refreshLive(); toast("Issuer request submitted", "The contract owner can now approve this wallet."); } catch (error) { toast("Request failed", readableError(error), "error"); } }
+async function requestIssuer(event) { event.preventDefault(); const form = new FormData(event.currentTarget); if (state.mode === "demo") { closeModal(); toast("Demo request submitted", "A pending issuer request was added to the local scenario.", "warn"); return; } if (!state.deployment?.address) { closeModal(); toast("Live contract not configured", "Use the local app or configure a public testnet contract before submitting an issuer request.", "error"); return; } if (!state.contract) { const connected = await connectWallet(); if (!connected || !state.contract) return; } try { toast("Confirm issuer request", "Review and confirm the request in MetaMask.", "warn"); const tx = await state.contract.requestIssuer(form.get("name"), form.get("website"), form.get("type")); await tx.wait(); closeModal(); await refreshLive(); toast("Issuer request submitted", "The contract owner can now approve this wallet."); } catch (error) { toast("Request failed", readableError(error), "error"); } }
 
 function handleWalletEvents() {
   if (!window.ethereum?.on) return;
