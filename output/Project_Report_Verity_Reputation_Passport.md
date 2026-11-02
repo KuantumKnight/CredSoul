@@ -30,9 +30,9 @@ A shared EVM ledger gives holders, issuers, and verifiers a common record withou
 
 ## Project Launch Link
 
-[https://credsoul.vercel.app](https://credsoul.vercel.app)
+**Public launch:** [https://credsoul.vercel.app](https://credsoul.vercel.app)
 
-The public frontend loads at this address. Its current configuration reports that the smart contract is not loaded, so on-chain actions require a public-network contract deployment and matching frontend configuration.
+Deployment status checked 2 Nov 2026: frontend reachable; smart contract currently reports “Contract not loaded.”
 
 ## Softwares Used
 
