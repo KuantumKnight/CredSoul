@@ -81,3 +81,8 @@ button { border: 0; cursor: pointer; }
 .network-pill, .mode-toggle, .network-selector, .profile-chip, .icon-button, .auth-signup { cursor: pointer; }
 .network-selector:hover, .profile-chip:hover, .icon-button:hover { color: var(--ink); }
 .admin-stat em { white-space: nowrap; }
+/* Institution-paid student onboarding uses the existing issuer form styles. */
+.student-passport-panel { margin-bottom: 24px; }
+.student-passport-panel .form-note { font-size: 13px; overflow-wrap: anywhere; }
+.student-passport-panel button { min-height: 44px; }
+.student-passport-panel button:disabled { opacity: .55; cursor: not-allowed; }

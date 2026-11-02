@@ -32,6 +32,53 @@ describe("ReputationPassport", function () {
     expect(await passport.reputationScore(holder.address)).to.equal(0n);
   });
 
+  it("lets an approved issuer create a student-owned passport and then issue credentials", async function () {
+    const { passport, issuer, other } = await fixture();
+    const studentBalance = await ethers.provider.getBalance(other.address);
+    const transaction = await passport.connect(issuer).createProfileFor(other.address);
+    expect(transaction.from).to.equal(issuer.address);
+    await expect(transaction)
+      .to.emit(passport, "ProfileCreated").withArgs(other.address, 2n)
+      .and.to.emit(passport, "ProfileCreatedFor").withArgs(issuer.address, other.address, 2n);
+    expect(await passport.ownerOf(2)).to.equal(other.address);
+    expect(await ethers.provider.getBalance(other.address)).to.equal(studentBalance);
+    expect(await passport.passportToken(issuer.address)).to.equal(0n);
+    expect(await passport.holderCount(other.address)).to.equal(1n);
+    expect(await passport.getHolders()).to.include(other.address);
+    expect(await passport.reputationScore(other.address)).to.equal(0n);
+    await passport.connect(issuer).issueCredential(other.address, "Academic", "Course completion", "Passed", 1723766400, 0, 50, ethers.id("course"));
+    expect(await passport.reputationScore(other.address)).to.equal(50n);
+    await expect(passport.connect(other).transferFrom(other.address, issuer.address, 2))
+      .to.be.revertedWith("Soulbound token is non-transferable");
+  });
+
+  it("blocks duplicate passports across issuer-created and self-created paths", async function () {
+    const { passport, issuer, holder, other, admin } = await fixture();
+    await expect(passport.connect(issuer).createProfileFor(holder.address)).to.be.revertedWith("Profile already exists");
+    await passport.connect(issuer).createProfileFor(other.address);
+    await expect(passport.connect(other).createProfile()).to.be.revertedWith("Profile already exists");
+    await expect(passport.connect(issuer).createProfileFor(other.address)).to.be.revertedWith("Profile already exists");
+    await passport.connect(admin).setIssuerStatus(admin.address, 2);
+    await expect(passport.connect(admin).createProfileFor(other.address)).to.be.revertedWith("Profile already exists");
+    expect(await passport.getHolders()).to.deep.equal([holder.address, other.address]);
+  });
+
+  it("rejects the zero address without creating a passport", async function () {
+    const { passport, issuer, other } = await fixture();
+    await expect(passport.connect(issuer).createProfileFor(ethers.ZeroAddress)).to.be.revertedWith("Invalid recipient");
+    await passport.connect(issuer).createProfileFor(other.address);
+    expect(await passport.passportToken(other.address)).to.equal(2n);
+  });
+
+  for (const [name, status] of [["unregistered", 0], ["pending", 1], ["rejected", 3], ["suspended", 4], ["revoked", 5]]) {
+    it(`prevents ${name} issuers from creating passports for students`, async function () {
+      const { passport, admin, issuer, other } = await fixture();
+      await passport.connect(admin).setIssuerStatus(issuer.address, status);
+      await expect(passport.connect(issuer).createProfileFor(other.address)).to.be.revertedWith("Issuer is not verified");
+      expect(await passport.passportToken(other.address)).to.equal(0n);
+    });
+  }
+
   it("rejects unauthorized issuance and duplicate credentials", async function () {
     const { passport, holder, other, issuer } = await fixture();
     const hash = ethers.id("certificate.pdf");

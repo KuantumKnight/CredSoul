@@ -8,6 +8,10 @@ Verity has three deliberately separate layers:
 2. `contracts/ReputationPassport.sol` owns profile, issuer, credential,
    revocation, expiry, and evidence-hash rules. The contract is the authority
    for live records and score calculations.
+   Approved issuers may use `createProfileFor(recipient)` to pay for passport
+   creation on a student's behalf. The student owns the token immediately;
+   self-creation and issuer creation share the same uniqueness rules. The
+   issuer must verify the wallet association outside the contract.
 3. `scripts/deploy.js` writes only public contract metadata to
    `public/deployment.json`. Secrets stay in local or hosted environment
    variables and are never bundled into the client.

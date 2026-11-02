@@ -1,8 +1,39 @@
 import { ethers } from "ethers";
 import QRCode from "qrcode";
+import "@fontsource-variable/manrope";
+import "@fontsource/dm-mono/latin-400.css";
+import fingerprint from "@phosphor-icons/core/assets/regular/fingerprint.svg?raw";
+import arrowUpRight from "@phosphor-icons/core/assets/regular/arrow-up-right.svg?raw";
+import scan from "@phosphor-icons/core/assets/regular/scan.svg?raw";
+import lock from "@phosphor-icons/core/assets/regular/lock-simple.svg?raw";
+import sparkle from "@phosphor-icons/core/assets/regular/sparkle.svg?raw";
+import bell from "@phosphor-icons/core/assets/regular/bell.svg?raw";
+import copy from "@phosphor-icons/core/assets/regular/copy.svg?raw";
+import code from "@phosphor-icons/core/assets/regular/code.svg?raw";
+import flask from "@phosphor-icons/core/assets/regular/flask.svg?raw";
+import trophy from "@phosphor-icons/core/assets/regular/trophy.svg?raw";
+import gitBranch from "@phosphor-icons/core/assets/regular/git-branch.svg?raw";
+import shield from "@phosphor-icons/core/assets/regular/shield-check.svg?raw";
+import users from "@phosphor-icons/core/assets/regular/users.svg?raw";
+import graduation from "@phosphor-icons/core/assets/regular/graduation-cap.svg?raw";
+import briefcase from "@phosphor-icons/core/assets/regular/briefcase.svg?raw";
+import house from "@phosphor-icons/core/assets/regular/house.svg?raw";
+import cube from "@phosphor-icons/core/assets/regular/cube.svg?raw";
+import chart from "@phosphor-icons/core/assets/regular/chart-donut.svg?raw";
+import magnifyingGlass from "@phosphor-icons/core/assets/regular/magnifying-glass.svg?raw";
+import squares from "@phosphor-icons/core/assets/regular/squares-four.svg?raw";
+
+const icons = { fingerprint, "arrow-up-right": arrowUpRight, scan, lock, sparkle, bell, copy };
+const decorativeIcon = (svg) => svg.replace("<svg ", '<svg aria-hidden="true" focusable="false" ');
+document.querySelectorAll("[data-icon]").forEach((element) => { element.innerHTML = decorativeIcon(icons[element.dataset.icon]); });
+document.querySelector("#notificationsButton").innerHTML = decorativeIcon(bell);
+const navigationIcons = { overview: house, credentials: cube, reputation: chart, verify: magnifyingGlass, issuer: arrowUpRight, admin: squares };
+document.querySelectorAll(".nav-item").forEach((element) => { element.querySelector(".nav-icon").innerHTML = decorativeIcon(navigationIcons[element.dataset.view]); });
+document.querySelector('.nav-item.active').setAttribute('aria-current', 'page');
 
 const ABI = [
   "function createProfile() returns (uint256)",
+  "function createProfileFor(address recipient) returns (uint256)",
   "function requestIssuer(string name,string website,string organizationType)",
   "function setIssuerStatus(address issuer,uint8 status)",
   "function issueCredential(address recipient,string category,string title,string description,uint64 issueDate,uint64 expiryDate,uint32 score,bytes32 evidenceHash) returns (uint256)",
@@ -69,13 +100,19 @@ const state = {
   issuerActivity: [],
   issuerCredentials: [],
   liveRequests: [],
+  liveIssuers: [],
   owner: "",
   blockNumber: 0,
   clerk: null,
   user: null,
   authReady: false,
   publicProfile: false,
+  passportCreationPending: false,
+  demoPassportHolders: new Set(),
   demoIssuers: [
+    { address: DEMO_ISSUERS.vit, name: "VIT Chennai", type: "University", status: 2 },
+    { address: DEMO_ISSUERS.cloud, name: "CloudCert Pro", type: "Certification body", status: 2 },
+    { address: DEMO_ISSUERS.lab, name: "VIT Research Cell", type: "Research institution", status: 2 },
     { address: "0x4444444444444444444444444444444444444444", name: "Open Source Guild", type: "Community organization", status: 1 },
     { address: "0x5555555555555555555555555555555555555555", name: "FutureSkills Academy", type: "Certification body", status: 1 },
     { address: "0x6666666666666666666666666666666666666666", name: "NexGen Labs", type: "Research institution", status: 1 }
@@ -115,6 +152,9 @@ function credentialStatus(credential) {
 }
 
 function setMode(mode) {
+  if (state.passportCreationPending) { toast("Passport creation pending", "Wait for the current request to finish before switching modes.", "warn"); return; }
+  state.demoPassportHolders = new Set([DEMO_WALLET, ...DEMO_CREDENTIALS.map((credential) => credential.recipient.toLowerCase())]);
+  $("#passportCreationFeedback").textContent = "";
   state.mode = mode;
   localStorage.setItem(MODE_KEY, mode);
   const toggle = $("#modeToggle");
@@ -136,7 +176,7 @@ function setMode(mode) {
     renderAll();
     toast("Demo mode enabled", "Seeded data is local to this browser. Switch back to live mode for wallet and contract data.", "warn");
   } else {
-    state.account = ""; state.profileExists = false; state.credentials = []; state.allCredentials = []; state.score = 0; state.issuerStatus = 0; state.issuerNames = new Map(); state.issuerActivity = []; state.issuerCredentials = []; state.liveRequests = []; state.owner = ""; state.blockNumber = 0; calculateCategories(); renderAll();
+    state.account = ""; state.profileExists = false; state.credentials = []; state.allCredentials = []; state.score = 0; state.issuerStatus = 0; state.issuerNames = new Map(); state.issuerActivity = []; state.issuerCredentials = []; state.liveRequests = []; state.liveIssuers = []; state.owner = ""; state.blockNumber = 0; calculateCategories(); renderAll();
     toast("Live mode enabled", "No demo data is loaded. Connect a wallet to read the deployed contract.");
     if (state.provider) refreshLive();
   }
@@ -176,12 +216,15 @@ function renderIdentity() {
   const name = state.mode === "demo" ? "Sarvesh M." : state.publicProfile ? "Public holder" : clerkName || (hasWallet ? "Connected holder" : "Wallet not connected");
   const initials = state.mode === "demo" ? "SM" : state.publicProfile ? "↗" : state.user ? (state.user.firstName || state.user.username || "U").slice(0, 2).toUpperCase() : hasWallet ? state.account.slice(2, 4).toUpperCase() : "—";
   $("#identityName").textContent = name; $("#identityInitials").textContent = initials; $("#walletLabel").textContent = state.mode === "demo" ? "Sarvesh M." : hasWallet ? "Connected wallet" : "Connect MetaMask"; $("#walletAddress").textContent = shortAddress(state.account) || "No wallet";
-  $("#identityAddress").innerHTML = `${esc(shortAddress(state.account) || "Connect a wallet to continue")} <button class="copy-button" data-copy="${esc(state.account)}">⧉</button>`;
+  $(".wallet-avatar").textContent = hasWallet ? initials : "V";
+  $("#identityAddress").innerHTML = `${esc(state.account ? shortAddress(state.account) : "Your wallet. Your identity.")} ${state.account ? `<button class="copy-button" aria-label="Copy wallet address" data-copy="${esc(state.account)}">${decorativeIcon(copy)}</button>` : ""}`;
   $("#identityOrg").textContent = state.mode === "demo" ? "Vellore Institute of Technology" : state.deployment ? `Live contract · ${shortAddress(state.deployment.address)}` : "Deploy the contract and load deployment.json";
   $("#sbtId").textContent = state.profileExists ? (state.mode === "demo" ? "#VT-00842" : `#${state.account ? state.account.slice(-6).toUpperCase() : "—"}`) : "—";
   $("#memberSince").textContent = state.profileExists ? (state.mode === "demo" ? "Aug 2024" : "On-chain") : "—";
   $("#holderNameSuffix").textContent = state.mode === "demo" ? ", Sarvesh" : state.publicProfile ? "" : clerkName ? `, ${clerkName.split(" ")[0]}` : "";
-  $("#holderIntro").textContent = state.mode === "demo" ? "A presentation scenario with a complete credential lifecycle." : state.publicProfile ? "Public read-only profile. No wallet authentication is required to verify this record." : state.user ? (state.account ? "Your verified achievements, read directly from the deployed contract." : "Connect a wallet to load your on-chain reputation passport.") : "Sign in with Clerk, then connect a wallet to manage your on-chain reputation passport.";
+  $("#holderIntro").textContent = state.mode === "demo" ? "A living record of achievement. Explore this sample passport in demo mode." : state.publicProfile ? "A public record of verified achievement. Open for anyone to verify." : state.user ? (state.account ? "A living record of everything you’ve earned. Verified on-chain. Owned by you." : "Connect your wallet and give your achievements a place to belong.") : "A living record of everything you’ve earned. Connect to make it yours.";
+  $("#onboardingStrip").hidden = hasWallet || state.mode === "demo";
+  $(".identity-card").classList.toggle("has-identity", state.profileExists);
 }
 
 function renderScore() {
@@ -244,27 +287,20 @@ function renderScoreChart() {
 
 function renderBreakdown() {
   const entries = Object.entries(state.categories).filter(([, score]) => score > 0).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const list = entries.length ? entries : [["No credentials yet", 0]];
-  $("#breakdownGrid").innerHTML = list.slice(0, 8).map(([category, score]) => `<div class="panel breakdown-item"><div class="breakdown-head"><span>${esc(category)}</span><strong>${score}</strong></div><div class="progress-track"><div class="progress-bar" style="width:${Math.min(100, Number(score) / 2.5)}%"></div></div><small>${score ? "Active contribution" : "Issue a credential to begin"}</small></div>`).join("");
+  const list = entries.length ? entries : [["Technical", 0], ["Hackathon", 0], ["Research", 0], ["Community", 0]];
+  $("#breakdownGrid").innerHTML = list.slice(0, 4).map(([category, score]) => {
+    const count = state.credentials.filter((credential) => credential.category === category && credentialStatus(credential) === "ACTIVE").length;
+    return `<button class="panel breakdown-item ${colorFor(category)}" data-view-target="reputation"><div class="breakdown-head"><span class="dimension-icon">${symbolFor(category)}</span><span class="dimension-arrow">↗</span></div><span class="dimension-name">${esc(category)}</span><div class="dimension-value"><strong>${score}</strong><span>/ 250 pts</span></div><div class="progress-track" role="meter" aria-label="${esc(category)} reputation" aria-valuemin="0" aria-valuemax="250" aria-valuenow="${Math.min(250, Number(score))}"><div class="progress-bar" style="width:${Math.min(100, Number(score) / 2.5)}%"></div></div><small>${count ? `${count} verified credential${count === 1 ? "" : "s"}` : "Your next chapter awaits"}</small></button>`;
+  }).join("");
 }
 
 function symbolFor(category) {
-  const paths = {
-    Technical: '<path d="M8 6 4 10l4 4M16 6l4 4-4 4M14 4l-4 12"/>',
-    Research: '<path d="M9 3h6M10 3v5l-4.5 8.2A2 2 0 0 0 7.2 19h9.6a2 2 0 0 0 1.7-2.8L14 8V3M8 14h8"/>',
-    Hackathon: '<path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z"/>',
-    "Open Source": '<path d="M8 8 4 12l4 4M16 8l4 4-4 4M14 5l-4 14"/>',
-    Leadership: '<path d="M12 3 20 7v5c0 4.5-3.2 7.3-8 9-4.8-1.7-8-4.5-8-9V7l8-4Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
-    Community: '<circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M14 16.5a4.5 4.5 0 0 1 6.5 2.5"/>',
-    Academic: '<path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11.5V16c3 2 7 2 10 0v-4.5M21 9v6"/>',
-    Professional: '<rect x="4" y="7" width="16" height="12" rx="2"/><path d="M9 7V5h6v2M4 12h16M10 12v2h4v-2"/>',
-    Sports: '<circle cx="12" cy="12" r="8"/><path d="m7 7 5 5 5-5M7 17l5-5 5 5"/>'
-  };
-  return `<svg class="category-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[category] || '<path d="M12 3 20 8v8l-8 5-8-5V8l8-5Z"/><path d="m8 12 2.5 2.5L16 9"/>'}</svg>`;
+  const symbols = { Technical: code, Research: flask, Hackathon: trophy, "Open Source": gitBranch, Leadership: shield, Community: users, Academic: graduation, Professional: briefcase };
+  return decorativeIcon(symbols[category] || shield).replace('<svg ', '<svg class="category-icon" ');
 }
 function colorFor(category) { return ({ Technical: "green", Research: "purple", Hackathon: "amber", "Open Source": "green", Leadership: "purple", Community: "amber" })[category] || ""; }
 function credentialRow(credential) { const status = credentialStatus(credential); return `<div class="credential-row"><div class="credential-symbol ${colorFor(credential.category)}">${symbolFor(credential.category)}</div><div class="credential-copy"><strong>${esc(credential.title)}</strong><span>${esc(credential.issuerName || shortAddress(credential.issuer))} · ${esc(credential.category)}</span></div><div class="credential-status"><strong class="${status !== "ACTIVE" ? "status-muted" : ""}">${status === "ACTIVE" ? "✓ VERIFIED" : status}</strong><span>${status === "ACTIVE" ? `+${credential.score} pts` : formatDate(credential.expiryDate || credential.issueDate)}</span></div></div>`; }
-function renderRecent() { $("#recentCredentials").innerHTML = state.credentials.length ? state.credentials.slice(0, 4).map(credentialRow).join("") : `<div class="empty-state">No credentials are associated with this wallet yet.</div>`; }
+function renderRecent() { $("#recentCredentials").innerHTML = state.credentials.length ? state.credentials.slice(0, 4).map(credentialRow).join("") : `<div class="empty-state"><strong>Great work deserves a record.</strong>Your verified achievements will find a home here.</div>`; }
 
 function historyItems() {
   return state.credentials.map((credential) => { const status = credentialStatus(credential); return { date: credential.issueDate, title: credential.title, detail: `${credential.issuerName || shortAddress(credential.issuer)} · ${status.toLowerCase()}`, points: status === "ACTIVE" ? `+${credential.score}` : `−${credential.score}`, tone: status === "REVOKED" ? "revoked" : status === "EXPIRED" ? "expired" : "" }; }).sort((a, b) => parseDate(b.date) - parseDate(a.date));
@@ -289,10 +325,26 @@ function renderReputation() {
   const entries = Object.entries(state.categories).filter(([, score]) => score > 0).sort((a, b) => b[1] - a[1]);
   $("#radarLegend").innerHTML = (entries.length ? entries : [["No active categories", 0]]).slice(0, 7).map(([name, score]) => `<div class="legend-row"><span>${esc(name)}</span><span class="legend-score">${score} <b>/ 250</b></span></div>`).join("");
   $("#scoreLedger").innerHTML = (entries.length ? entries : [["No active credentials", 0]]).map(([name, score]) => `<div class="ledger-row"><div class="ledger-copy"><i></i>${esc(name)}</div><strong>${score}</strong><small><i style="width:${Math.min(100, Number(score) / 2.5)}%"></i></small></div>`).join("");
-  const radar = $("#radarChart"); if (radar) radar.innerHTML = `<div class="radar-polygon"></div><span class="radar-label">Technical</span><span class="radar-label">Research</span><span class="radar-label">Leadership</span><span class="radar-label">Community</span><span class="radar-label">Academic</span>`;
+  const radar = $("#radarChart");
+  const axes = CATEGORY_LIST;
+  const point = (index, radius) => {
+    const angle = index * Math.PI * 2 / axes.length - Math.PI / 2;
+    return [180 + Math.cos(angle) * radius, 180 + Math.sin(angle) * radius];
+  };
+  const polygon = (radius) => axes.map((_, index) => point(index, radius).join(",")).join(" ");
+  const values = axes.map((name, index) => point(index, 103 * Math.min(250, Number(state.categories[name] || 0)) / 250));
+  radar.innerHTML = `<svg viewBox="0 0 360 360" role="img" aria-labelledby="radarTitle radarDescription"><title id="radarTitle">Reputation by category</title><desc id="radarDescription">${esc(entries.length ? entries.map(([name, score]) => `${name}: ${score} of 250 points`).join(". ") : "No active credentials. All categories are zero.")}</desc>${[.25, .5, .75, 1].map((scale) => `<polygon points="${polygon(103 * scale)}" class="radar-grid"/>`).join("")}${axes.map((name, index) => {
+    const [x, y] = point(index, 103); const [labelX, labelY] = point(index, 127);
+    return `<line x1="180" y1="180" x2="${x}" y2="${y}" class="radar-spoke"/><text x="${labelX}" y="${labelY}" text-anchor="${labelX < 165 ? "end" : labelX > 195 ? "start" : "middle"}" dominant-baseline="middle" class="radar-axis">${esc(name)}</text>`;
+  }).join("")}<polygon points="${values.map((value) => value.join(",")).join(" ")}" class="radar-data"/>${values.map(([x, y], index) => `<circle cx="${x}" cy="${y}" r="3" class="radar-data-point"><title>${esc(axes[index])}: ${state.categories[axes[index]] || 0} points</title></circle>`).join("")}</svg>`;
 }
 
 function renderIssuerActivity() {
+  const createButton = $("#createStudentPassportButton");
+  const canCreate = state.mode === "demo" || (!state.publicProfile && state.issuerStatus === 2);
+  createButton.disabled = state.passportCreationPending || (Boolean(state.account) && !canCreate);
+  createButton.textContent = state.passportCreationPending ? "Creating passport…" : state.mode === "demo" ? "Create demo passport" : state.account ? "Create student passport" : "Connect issuer wallet";
+  $("#passportCreationHelp").textContent = state.mode === "demo" ? "Sample passports stay in this demo session. No gas is spent." : state.publicProfile ? "Public profiles are read-only. Open your own session to create student passports." : state.account && !canCreate ? "An administrator must approve your issuer wallet before you can create student passports." : "Use a student-confirmed wallet address. Your issuer wallet pays gas; the student owns the passport.";
   const issuerStatus = $("#issuerStatus");
   if (issuerStatus) {
     const verified = state.mode === "demo" || state.issuerStatus === 2;
@@ -325,14 +377,16 @@ function renderAdmin() {
   const networkCredentials = state.mode === "demo" ? state.credentials : state.allCredentials;
   const holderCount = new Set(networkCredentials.map((credential) => credential.recipient)).size;
   const credentialCount = networkCredentials.length;
-  const issuerCount = new Set(networkCredentials.map((credential) => credential.issuer)).size;
+  const issuerRegistry = state.mode === "demo" ? state.demoIssuers : state.liveIssuers;
+  const issuerCount = new Set(issuerRegistry.filter((issuer) => issuer.status === 2).map((issuer) => issuer.address.toLowerCase())).size;
   const revocationRate = credentialCount ? Math.round(networkCredentials.filter((credential) => credentialStatus(credential) === "REVOKED").length / credentialCount * 100) : 0;
   $("#adminHolderCount").textContent = holderCount; $("#adminCredentialCount").textContent = credentialCount; $("#adminIssuerCount").textContent = issuerCount; $("#adminRevocationRate").textContent = `${revocationRate}%`;
   const context = state.mode === "demo" ? "demo record" : state.account ? "connected wallet" : "wallet required";
   $("#adminHolderContext").textContent = context; $("#adminCredentialContext").textContent = context; $("#adminIssuerContext").textContent = context; $("#adminRevocationContext").textContent = context;
   $("#adminIdentityLabel").textContent = state.mode === "demo" ? "Demo admin" : state.owner ? "Contract owner" : "Admin wallet";
   $("#adminIdentityAddress").textContent = state.mode === "demo" ? "showcase scenario" : shortAddress(state.owner) || "not loaded";
-  const requests = state.mode === "demo" ? state.demoIssuers : state.liveRequests || [];
+  $("#adminIssuerContext").textContent = state.mode === "demo" ? "demo issuer registry" : state.account ? "on-chain issuer registry" : "wallet required";
+  const requests = state.mode === "demo" ? state.demoIssuers.filter((issuer) => issuer.status === 1) : state.liveRequests || [];
   $("#requestCount").textContent = `${requests.length} pending`;
   $("#issuerRequests").innerHTML = requests.length ? requests.map((request) => `<div class="request-row"><div class="request-logo">◎</div><div class="request-copy"><strong>${esc(request.name)}</strong><span>${esc(request.type)} · ${shortAddress(request.address)}</span></div><div class="request-actions"><button data-approve-issuer="${esc(request.address)}">Approve</button><button class="reject" data-reject-issuer="${esc(request.address)}">Reject</button></div></div>`).join("") : `<div class="empty-state">No pending issuer requests.</div>`;
   const recentCredentials = state.mode === "demo" ? networkCredentials.slice(0, 5) : networkCredentials.slice(-5).reverse();
@@ -345,12 +399,51 @@ function activateView(viewName) {
   $$(".view").forEach((view) => view.classList.toggle("active", view.id === `view-${viewName}`));
   const label = $(`.nav-item[data-view="${viewName}"] span:nth-child(2)`)?.textContent || viewName;
   $("#breadcrumbCurrent").textContent = label;
-  $("#sidebar")?.classList.remove("open");
+  closeNavigation();
+  $$(".nav-item").forEach((item) => { if (item.dataset.view === viewName) item.setAttribute("aria-current", "page"); else item.removeAttribute("aria-current"); });
   if (viewName === "credentials") renderCredentials();
 }
 
-function openModal(content) { $("#modalContent").innerHTML = content; $("#modalBackdrop").classList.add("open"); $("#modalBackdrop").setAttribute("aria-hidden", "false"); }
-function closeModal() { $("#modalBackdrop").classList.remove("open"); $("#modalBackdrop").setAttribute("aria-hidden", "true"); }
+let modalReturnFocus = null;
+function openModal(content) {
+  modalReturnFocus = document.activeElement;
+  const modal = $("#modalContent");
+  modal.innerHTML = content;
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  const heading = modal.querySelector("h2");
+  if (heading) { heading.id = "dialogTitle"; modal.setAttribute("aria-labelledby", "dialogTitle"); }
+  $("#modalBackdrop").classList.add("open");
+  $("#modalBackdrop").setAttribute("aria-hidden", "false");
+  $(".app-shell").inert = true;
+  modal.querySelector("button, input, select")?.focus();
+}
+function closeModal() {
+  if (!$("#modalBackdrop").classList.contains("open")) return;
+  $("#modalBackdrop").classList.remove("open");
+  $("#modalBackdrop").setAttribute("aria-hidden", "true");
+  $(".app-shell").inert = false;
+  if (modalReturnFocus?.isConnected) modalReturnFocus.focus();
+}
+function closeNavigation() {
+  const wasOpen = $("#sidebar").classList.contains("open");
+  $("#sidebar").classList.remove("open");
+  $("#mobileMenu").setAttribute("aria-expanded", "false");
+  document.body.classList.remove("navigation-open");
+  if (wasOpen) $("#mobileMenu").focus();
+}
+matchMedia("(min-width: 821px)").addEventListener("change", (event) => { if (event.matches) closeNavigation(); });
+document.addEventListener("keydown", (event) => {
+  const modalOpen = $("#modalBackdrop").classList.contains("open");
+  const navigationOpen = $("#sidebar").classList.contains("open");
+  if (event.key === "Escape") { if (modalOpen) closeModal(); else if (navigationOpen) closeNavigation(); }
+  if (event.key !== "Tab" || (!modalOpen && !navigationOpen)) return;
+  const container = modalOpen ? $("#modalContent") : $("#sidebar");
+  const controls = [...container.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')].filter((element) => element.getClientRects().length && getComputedStyle(element).visibility !== "hidden");
+  const first = controls[0]; const last = controls.at(-1);
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+});
 
 async function openShareModal() {
   if (state.mode === "live" && !state.account) { toast("Connect a wallet first", "A public QR link can only be created for a real on-chain wallet.", "warn"); return; }
@@ -498,7 +591,13 @@ async function refreshLive() {
       for (const category of CATEGORY_LIST) state.categories[category] = Number(await state.contract.categoryScore(state.account, category));
     } else calculateCategories();
     if (state.issuerStatus === 2) { const ids = await state.contract.getIssuerCredentials(state.account); state.issuerCredentials = []; for (const id of ids) state.issuerCredentials.push(await liveCredential(await state.contract.getCredential(id))); state.issuerActivity = state.issuerCredentials.slice(-5).reverse(); } else state.issuerActivity = [];
-    const requestAddresses = await state.contract.getIssuerRegistry(); state.liveRequests = []; for (const address of requestAddresses) { const record = await state.contract.issuers(address); if (Number(record.status) === 1) state.liveRequests.push({ address, name: record.name, type: record.organizationType, status: Number(record.status) }); }
+    const requestAddresses = [...new Set((await state.contract.getIssuerRegistry()).map((address) => address.toLowerCase()))];
+    const issuerRecords = await Promise.all(requestAddresses.map(async (address) => {
+      const record = await state.contract.issuers(address);
+      return { address, name: record.name, type: record.organizationType, status: Number(record.status) };
+    }));
+    state.liveIssuers = issuerRecords;
+    state.liveRequests = issuerRecords.filter((issuer) => issuer.status === 1);
     renderAll();
   } catch (error) { toast("Could not read contract", readableError(error), "error"); }
 }
@@ -514,6 +613,54 @@ async function createProfile() {
   if (state.mode === "demo") { toast("Demo profile already exists", "Switch to live mode to create a real on-chain profile.", "warn"); return; }
   if (!state.contract) return connectWallet();
   try { toast("Confirm transaction", "Create profile in your wallet to mint your one-per-wallet soulbound NFT.", "warn"); const tx = await state.contract.createProfile(); await tx.wait(); await refreshLive(); toast("Profile created", "Your soulbound reputation identity is now on-chain."); } catch (error) { toast("Profile creation failed", readableError(error), "error"); }
+}
+
+async function createStudentPassport(event) {
+  event.preventDefault();
+  if (state.passportCreationPending || (state.mode === "live" && state.publicProfile)) return;
+  const form = event.currentTarget;
+  const field = form.elements.recipient;
+  const recipient = field.value.trim();
+  const feedback = $("#passportCreationFeedback");
+  const valid = ethers.isAddress(recipient) && recipient !== ethers.ZeroAddress;
+  markFieldError(field, !valid);
+  if (!valid) { feedback.textContent = "Enter a valid, non-zero student wallet address."; field.focus(); return; }
+  state.passportCreationPending = true;
+  form.setAttribute("aria-busy", "true");
+  field.disabled = true;
+  renderIssuerActivity();
+  try {
+    if (state.mode === "demo") {
+      const holder = recipient.toLowerCase();
+      if (state.demoPassportHolders.has(holder) || state.credentials.some((credential) => credential.recipient.toLowerCase() === holder)) throw new Error("Profile already exists");
+      state.demoPassportHolders.add(holder);
+      feedback.textContent = `Demo passport created for ${recipient}. No blockchain transaction was sent.`;
+    } else {
+      if (!state.signer || !state.contract) {
+        feedback.textContent = "Connect your approved issuer wallet to continue.";
+        const connected = await connectWallet();
+        if (!connected || !state.signer || !state.contract) return;
+      }
+      const contract = state.contract;
+      const issuer = await contract.issuers(await state.signer.getAddress());
+      if (Number(issuer.status) !== 2) throw new Error("Issuer is not verified");
+      if (await contract.passportToken(recipient) !== 0n) throw new Error("Profile already exists");
+      feedback.textContent = "Confirm in MetaMask. Your issuer wallet pays gas; the student receives the passport.";
+      const tx = await contract.createProfileFor(recipient);
+      feedback.textContent = "Waiting for blockchain confirmation…";
+      await tx.wait();
+      await refreshLive();
+      feedback.textContent = `Passport created for ${recipient}. The student owns it and can now receive credentials.`;
+    }
+    form.reset();
+  } catch (error) {
+    feedback.textContent = `Passport creation failed: ${readableError(error)}${error?.code === "CALL_EXCEPTION" && (!error.data || error.data === "0x") ? " If this is an older contract, deploy the updated contract and reload the app." : ""}`;
+  } finally {
+    state.passportCreationPending = false;
+    form.setAttribute("aria-busy", "false");
+    field.disabled = false;
+    renderIssuerActivity();
+  }
 }
 
 function readableError(error) { const code = error?.code || error?.info?.error?.code; if (code === 4001 || code === "ACTION_REJECTED") return "The wallet request was rejected."; const text = error?.shortMessage || error?.reason || error?.message || "Unknown transaction error"; return text.replace(/^execution reverted: /i, "").replace(/^user rejected.*/i, "The wallet request was rejected.").slice(0, 180); }
@@ -593,7 +740,14 @@ async function revokeCredential(id) {
 }
 
 async function setIssuerStatus(address, status) {
-  if (state.mode === "demo") { state.demoIssuers = state.demoIssuers.filter((item) => item.address !== address); renderAdmin(); toast(status === 2 ? "Demo issuer approved" : "Demo request rejected", "This action is local to demo mode.", "warn"); return; }
+  if (state.mode === "demo") {
+    const issuer = state.demoIssuers.find((item) => item.address.toLowerCase() === address.toLowerCase());
+    if (!issuer || issuer.status !== 1) return;
+    issuer.status = status;
+    renderAdmin();
+    toast(status === 2 ? "Demo issuer approved" : "Demo request rejected", "This action is local to demo mode.", "warn");
+    return;
+  }
   if (!state.contract) { const connected = await connectWallet(); if (!connected || !state.contract) return; }
   try { const tx = await state.contract.setIssuerStatus(address, status); await tx.wait(); await refreshLive(); toast(status === 2 ? "Issuer approved" : "Issuer rejected", "The issuer registry was updated on-chain."); } catch (error) { toast("Issuer update failed", readableError(error), "error"); }
 }
@@ -645,11 +799,19 @@ async function initialize() {
   $("#notificationsButton").addEventListener("click", () => toast("No new alerts", state.mode === "demo" ? "Demo notifications are disabled." : "Credential and issuer events will appear here when enabled."));
   $("#networkSelector").addEventListener("click", () => toast("Network selection", state.deployment ? `Connected to ${state.deployment.network} · chain ${state.deployment.chainId}. Change networks in your wallet.` : "Deploy the contract to configure a network."));
   $("#modeToggle").addEventListener("click", () => setMode(state.mode === "demo" ? "live" : "demo"));
-  $("#mobileMenu").addEventListener("click", () => { const sidebar = $("#sidebar"); const open = sidebar.classList.toggle("open"); $("#mobileMenu").setAttribute("aria-expanded", String(open)); });
+  $("#mobileMenu").addEventListener("click", () => {
+    if ($("#sidebar").classList.contains("open")) { closeNavigation(); return; }
+    $("#sidebar").classList.add("open");
+    $("#mobileMenu").setAttribute("aria-expanded", "true");
+    document.body.classList.add("navigation-open");
+    $(".sidebar-close").focus();
+  });
   $$(".nav-item").forEach((item) => item.addEventListener("click", () => activateView(item.dataset.view)));
   document.addEventListener("click", async (event) => {
+    if (event.target.closest("[data-close-nav]")) closeNavigation();
     const target = event.target.closest("[data-view-target]"); if (target) activateView(target.dataset.viewTarget);
     const view = event.target.closest("[data-view]"); if (view && !view.classList.contains("nav-item")) activateView(view.dataset.view);
+    if (event.target.closest("[data-action=demo]")) setMode("demo");
     if (event.target.closest("[data-action=share]")) openShareModal();
     if (event.target.closest("[data-action=transfer]")) openTransferModal();
     if (event.target.closest("[data-action=verify]")) activateView("verify");
@@ -670,6 +832,7 @@ async function initialize() {
   $("#verifyButton").addEventListener("click", () => verifyCredential()); $("#verifyInput").addEventListener("keydown", (event) => { if (event.key === "Enter") verifyCredential(); }); $("#credentialSearch").addEventListener("input", renderCredentials);
   document.addEventListener("submit", (event) => { if (event.target.id === "issuerRequestForm") requestIssuer(event); });
   $$("#credentialFilters .filter-tab").forEach((tab) => tab.addEventListener("click", () => { $$("#credentialFilters .filter-tab").forEach((item) => item.classList.remove("active")); tab.classList.add("active"); renderCredentials(); }));
+  $("#studentPassportForm").addEventListener("submit", createStudentPassport);
   $("#issueForm").addEventListener("submit", issueCredential); $("#issuerRequestForm")?.addEventListener("submit", requestIssuer);
   $("#evidenceInput").addEventListener("change", (event) => { const file = event.target.files?.[0]; if (file) { $("#uploadTitle").textContent = file.name; $("#uploadMeta").textContent = `${Math.round(file.size / 1024)} KB · SHA-256 before registration`; } });
   handleWalletEvents();

@@ -3,22 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#08111f" />
+    <meta name="theme-color" content="#101211" />
     <meta name="description" content="Verity is a transparent, wallet-connected soulbound reputation passport." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Verity — Soulbound Reputation Passport</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="accessibility.css" />
     <link rel="stylesheet" href="status.css" />
+    <link rel="stylesheet" href="design.css" />
     <link rel="stylesheet" href="print.css" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to workspace</a>
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
+        <button class="sidebar-close" data-close-nav aria-label="Close navigation">×</button>
         <div class="brand">
           <div class="brand-mark"><span></span><span></span><span></span></div>
           <div>
@@ -44,22 +43,23 @@
         </nav>
 
         <div class="sidebar-bottom">
-          <div class="help-card">
+          <button class="help-card" data-view-target="verify">
             <div class="help-orb">?</div>
             <div><strong>Need a hand?</strong><span>Read the verification guide</span></div>
             <span class="arrow">↗</span>
-          </div>
+          </button>
           <button class="wallet-card" id="walletButton">
-            <span class="wallet-avatar">SM</span>
-            <span class="wallet-copy"><strong id="walletLabel">Sarvesh M.</strong><small id="walletAddress">0x9F3a...C812</small></span>
+            <span class="wallet-avatar">V</span>
+            <span class="wallet-copy"><strong id="walletLabel">Connect wallet</strong><small id="walletAddress">No wallet connected</small></span>
             <span class="wallet-menu">•••</span>
           </button>
         </div>
       </aside>
+      <button class="nav-scrim" data-close-nav aria-label="Close navigation"></button>
 
       <main class="main-content" id="main-content" tabindex="-1">
         <header class="topbar">
-          <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+          <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button>
           <div class="breadcrumbs"><span>Workspace</span><span>/</span><strong id="breadcrumbCurrent">My passport</strong></div>
           <div class="topbar-actions">
             <button class="mode-toggle" id="modeToggle"><span class="mode-dot"></span><span id="modeLabel">Live mode</span></button>
@@ -76,31 +76,35 @@
           <section class="view active" id="view-overview">
             <div class="page-intro">
               <div>
-                <div class="eyebrow"><span class="eyebrow-dot"></span> Personal reputation passport</div>
-                <h1>Good morning<span id="holderNameSuffix"></span><span class="title-period">.</span></h1>
+                <div class="eyebrow">Welcome to your next chapter<span id="holderNameSuffix"></span></div>
+                <h1>Your work. <span class="title-accent">Your proof.</span></h1>
                 <p id="holderIntro">Connect a wallet to load your on-chain reputation passport.</p>
               </div>
-              <div class="intro-actions"><button class="button secondary" data-action="share">Share passport <span>↗</span></button><button class="button primary" data-action="verify">Verify a credential <span>⌕</span></button></div>
+              <div class="intro-actions"><button class="button secondary" data-action="share">Share passport <span data-icon="arrow-up-right">↗</span></button><button class="button primary" data-action="verify">Verify credential <span data-icon="scan">⌕</span></button></div>
             </div>
 
             <div class="passport-grid">
               <article class="score-card panel dark-panel">
-                <div class="card-topline"><span class="section-kicker light">Reputation score</span><span class="live-indicator"><span class="green-dot"></span><span id="scoreSource">Wallet required</span></span></div>
+                <div class="card-topline"><span class="section-kicker light">Your reputation score</span><span class="live-indicator"><span class="green-dot"></span><span id="scoreSource">Wallet required</span></span></div>
                 <div class="score-row"><div class="score-number" id="overallScore">0</div><div class="score-max">/ 1000</div></div>
                 <div class="tier-row"><span class="tier-badge" id="tierBadge">STARTER</span><span class="tier-copy" id="tierCopy">Connect wallet to load your score</span></div>
-                <div class="score-chart" aria-label="Reputation score trend chart"><svg viewBox="0 0 600 145" role="img" aria-labelledby="scoreChartTitle scoreChartDescription"><title id="scoreChartTitle">Reputation score trend</title><desc id="scoreChartDescription">The chart updates from active credentials in the selected data source.</desc><defs><linearGradient id="scoreFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7ef1c4" stop-opacity=".34"/><stop offset="1" stop-color="#7ef1c4" stop-opacity="0"/></linearGradient></defs><path id="scoreChartFill" class="chart-fill"/><path id="scoreChartLine" class="chart-line"/><g id="scoreChartDots" aria-label="Score points"></g></svg><div class="chart-labels" id="scoreChartLabels"></div><div class="chart-empty" id="scoreChartEmpty" hidden>No active credential history yet.</div></div>
+                <div class="score-chart" aria-label="Reputation score trend chart"><svg viewBox="0 0 600 145" role="img" aria-labelledby="scoreChartTitle scoreChartDescription"><title id="scoreChartTitle">Reputation score trend</title><desc id="scoreChartDescription">The chart updates from active credentials in the selected data source.</desc><defs><linearGradient id="scoreFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#d4f89a" stop-opacity=".34"/><stop offset="1" stop-color="#d4f89a" stop-opacity="0"/></linearGradient></defs><path id="scoreChartFill" class="chart-fill"/><path id="scoreChartLine" class="chart-line"/><g id="scoreChartDots" aria-label="Score points"></g></svg><div class="chart-labels" id="scoreChartLabels"></div><div class="chart-empty" id="scoreChartEmpty" hidden>No active credential history yet.</div></div>
             <div class="score-footer"><span><span class="green-dot"></span><span id="scoreDelta">No live data</span></span><span class="mono" id="scoreSync">Connect wallet</span></div>
               </article>
 
               <article class="identity-card panel">
-                <div class="card-topline"><span class="section-kicker">Soulbound identity</span><span class="verified-mark">✓</span></div>
+                <div class="passport-art" aria-hidden="true"><div class="guilloche"></div><span class="fingerprint" data-icon="fingerprint"></span></div>
+                <div class="card-topline"><span class="passport-wordmark">verity<span>®</span></span><span class="passport-type mono">SOULBOUND PASSPORT</span></div>
+                <div class="passport-caption">ONE IDENTITY. ENTIRELY YOURS.</div>
                 <div class="identity-main"><div class="identity-avatar"><span id="identityInitials">—</span><i></i></div><div><h2 id="identityName">Wallet not connected</h2><div class="address-line mono" id="identityAddress">Connect a wallet to continue <button class="copy-button" data-copy="">⧉</button></div><p id="identityOrg">Live data is read from the deployed contract</p></div></div>
                 <div class="identity-meta"><div><span>SBT ID</span><strong class="mono" id="sbtId">—</strong></div><div><span>Member since</span><strong id="memberSince">—</strong></div></div>
-                <div class="identity-footer"><span class="non-transferable"><span class="lock">⌑</span> Non-transferable identity</span><button class="text-button" data-action="transfer">Test transfer <span>→</span></button></div>
+                <div class="identity-footer"><span class="non-transferable"><span class="lock" data-icon="lock">⌑</span> Bound to you. Built to last.</span><button class="text-button" data-action="transfer" aria-label="Learn about soulbound transfer restrictions">Soulbound <span>↗</span></button></div>
               </article>
             </div>
 
-            <div class="section-heading"><div><span class="section-kicker">At a glance</span><h2>Reputation breakdown</h2></div><button class="text-button" data-view-target="reputation">View full breakdown <span>→</span></button></div>
+            <div class="onboarding-strip" id="onboardingStrip"><span class="onboarding-icon" data-icon="sparkle"></span><div><strong>Your reputation starts with you.</strong><span>Connect your wallet, or take a look around with a sample passport.</span></div><button class="text-button" data-action="demo">Explore demo <span>↗</span></button></div>
+
+            <div class="section-heading"><div><h2>A reputation with dimension<span class="title-period">.</span></h2><p class="section-description">Every achievement adds to your story.</p></div><button class="text-button" data-view-target="reputation">Full breakdown <span>↗</span></button></div>
             <div class="breakdown-grid" id="breakdownGrid"></div>
 
             <div class="content-grid">
@@ -109,6 +113,7 @@
             </div>
 
             <div class="security-strip"><div class="security-icon">✦</div><div><strong>Verified on-chain, readable everywhere.</strong><span>Every score change is linked to an issuer-approved credential and preserved in the audit trail.</span></div><button class="text-button" data-view-target="verify">How verification works <span>→</span></button></div>
+            <footer class="workspace-footer"><span>Reputation is earned. Ownership is yours.</span><span class="mono">VERITY / THE TRUST LAYER</span></footer>
           </section>
 
           <section class="view" id="view-credentials">
@@ -133,6 +138,15 @@
           <section class="view" id="view-issuer">
             <div class="page-intro"><div><div class="eyebrow"><span class="eyebrow-dot amber"></span> Organization issuer tools</div><h1>Issuer console<span class="title-period">.</span></h1><p>Issue trusted achievements and maintain the record.</p></div><button class="issuer-status" id="issuerStatus" data-action="requestIssuer"><span class="status-dot"></span> Request issuer status</button></div>
             <div class="metric-row issuer-metrics"><div class="metric-card panel"><span class="metric-label">Credentials issued</span><strong id="issuedMetric">0</strong><span class="metric-note" id="issuerMetricContext">connect issuer wallet</span></div><div class="metric-card panel"><span class="metric-label">Active credentials</span><strong class="metric-green" id="issuedActiveMetric">0</strong><span class="metric-note" id="issuerMetricContextActive">no live data</span></div><div class="metric-card panel"><span class="metric-label">Unique recipients</span><strong id="issuedRecipientsMetric">0</strong><span class="metric-note" id="issuerMetricContextRecipients">no live data</span></div><div class="metric-card panel"><span class="metric-label">Revocation rate</span><strong id="issuedRevocationMetric">0<span class="metric-suffix">%</span></strong><span class="metric-note" id="issuerMetricContextRevoked">no live data</span></div></div>
+            <section class="panel issue-form-panel student-passport-panel" aria-labelledby="studentPassportHeading">
+              <div class="section-heading compact"><div><span class="section-kicker">Student onboarding</span><h2 id="studentPassportHeading">Create a student passport</h2></div></div>
+              <form id="studentPassportForm">
+                <label>Student wallet address<input name="recipient" required placeholder="0x..." autocomplete="off" spellcheck="false" aria-describedby="passportCreationHelp passportCreationFeedback" /></label>
+                <p class="form-note" id="passportCreationHelp">Use a student-confirmed wallet address. Your issuer wallet pays gas; the student owns the passport.</p>
+                <button class="button primary" id="createStudentPassportButton" type="submit">Create student passport</button>
+                <p class="form-note" id="passportCreationFeedback" role="status" aria-live="polite"></p>
+              </form>
+            </section>
             <div class="issuer-layout"><section class="panel issue-form-panel"><div class="section-heading compact"><div><span class="section-kicker">New credential</span><h2>Issue an achievement</h2></div><span class="step-label">Step 1 of 2</span></div><form id="issueForm"><label>Recipient wallet<input required name="recipient" placeholder="0x..." /></label><div class="form-grid"><label>Credential title<input required name="title" placeholder="e.g. Hackathon Winner" /></label><label>Achievement type<select name="type"><option value="hackathon">Hackathon winner</option><option value="certification">Technical certification</option><option value="research">Research publication</option><option value="internship">Internship</option><option value="opensource">Open-source contribution</option><option value="leadership">Leadership role</option><option value="community">Volunteer contribution</option></select></label></div><div class="form-grid"><label>Category<select name="category"><option>Hackathon</option><option>Technical</option><option>Research</option><option>Professional</option><option>Open Source</option><option>Leadership</option><option>Community</option><option>Academic</option></select></label><label>Achievement level<select name="level"><option value="1">Standard · 1.0×</option><option value="1.2">Distinction · 1.2×</option><option value="1.5">Exceptional · 1.5×</option></select></label></div><label>Description<textarea required name="description" rows="3" placeholder="Describe what was achieved and how it was assessed."></textarea></label><div class="form-grid"><label>Issue date<input name="issueDate" id="issueDateInput" type="date" /></label><label>Expiration <span class="optional">optional</span><input name="expiry" type="date" /></label></div><label class="upload-box"><input name="evidence" id="evidenceInput" type="file" accept=".pdf,image/*" /><span class="upload-icon">↑</span><span><strong id="uploadTitle">Attach supporting evidence</strong><small id="uploadMeta">PDF or image · hashed before registration</small></span><span class="upload-browse">Browse</span></label><div class="form-note"><span>ⓘ</span> The file itself is never stored on-chain. Only its fingerprint is published.</div><button class="button primary full-width" type="submit">Review & issue credential <span>→</span></button></form></section><section class="panel issuer-side-panel"><div class="section-heading compact"><div><span class="section-kicker">Your activity</span><h2>Recent issues</h2></div><button class="text-button" data-action="issuerExport">Export <span>↓</span></button></div><div id="issuerActivity" class="issuer-activity"></div><div class="issuer-trust"><span class="trust-icon">✓</span><div><strong>Trusted issuer</strong><span id="issuerTrustCopy">Connect a wallet to load issuer status</span></div></div></section></div>
           </section>
 

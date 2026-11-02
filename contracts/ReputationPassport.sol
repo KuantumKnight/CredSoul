@@ -48,6 +48,7 @@ contract ReputationPassport is ERC721, Ownable {
     uint256 public revokedCredentials;
 
     event ProfileCreated(address indexed holder, uint256 indexed tokenId);
+    event ProfileCreatedFor(address indexed issuer, address indexed holder, uint256 indexed tokenId);
     event IssuerRequested(address indexed issuer, string name);
     event IssuerStatusChanged(address indexed issuer, IssuerStatus status);
     event CredentialIssued(uint256 indexed credentialId, address indexed recipient, address indexed issuer, bytes32 evidenceHash, uint256 score);
@@ -56,13 +57,25 @@ contract ReputationPassport is ERC721, Ownable {
     constructor() ERC721("Verity Reputation Passport", "VRP") Ownable(msg.sender) {}
 
     function createProfile() external returns (uint256 tokenId) {
-        require(passportToken[msg.sender] == 0, "Profile already exists");
+        return _createProfile(msg.sender);
+    }
+
+    /// @notice An approved issuer pays to mint a passport owned by the recipient.
+    function createProfileFor(address recipient) external returns (uint256 tokenId) {
+        require(issuers[msg.sender].status == IssuerStatus.Verified, "Issuer is not verified");
+        tokenId = _createProfile(recipient);
+        emit ProfileCreatedFor(msg.sender, recipient, tokenId);
+    }
+
+    function _createProfile(address recipient) internal returns (uint256 tokenId) {
+        require(recipient != address(0), "Invalid recipient");
+        require(passportToken[recipient] == 0, "Profile already exists");
         tokenId = _nextTokenId++;
-        passportToken[msg.sender] = tokenId;
-        holderCount[msg.sender] = 1;
-        _holders.push(msg.sender);
-        _safeMint(msg.sender, tokenId);
-        emit ProfileCreated(msg.sender, tokenId);
+        passportToken[recipient] = tokenId;
+        holderCount[recipient] = 1;
+        _holders.push(recipient);
+        _safeMint(recipient, tokenId);
+        emit ProfileCreated(recipient, tokenId);
     }
 
     function requestIssuer(string calldata name, string calldata website, string calldata organizationType) external {

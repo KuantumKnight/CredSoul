@@ -46,12 +46,36 @@ Vercel Project Settings → Environment Variables and redeploy.
 The contract supports:
 
 - one ERC-721 soulbound profile per wallet;
+- approved issuers creating student-owned passports and paying the minting gas;
 - administrator-controlled issuer requests and approval;
 - issuer-only credential issuance and revocation;
 - duplicate prevention;
 - expiry-aware reputation calculation;
 - evidence SHA-256 fingerprints;
 - public credential reads and evidence verification.
+
+## Institution-paid student onboarding
+
+An approved organization such as VIT can open **Issuer console → Create a
+student passport**, enter a student-confirmed wallet address, and confirm the
+transaction. The issuer pays gas, while the NFT is minted directly into the
+student's wallet. Creating a passport adds no reputation points; credentials
+must be issued separately. The student does not need to sign or pay for the
+issuer's minting transaction.
+
+Only verified issuers can call `createProfileFor(recipient)`. Zero addresses
+and existing passport holders are rejected. Student self-creation remains
+available, and both paths share the one-passport and non-transferability rules.
+The `ProfileCreatedFor` event records which issuer created the passport.
+The institution is responsible for verifying the student's wallet association;
+minting does not itself verify a real-world identity.
+
+Existing deployed contracts do not gain new functions when source files change.
+To use this feature on the local chain, run `npm run deploy`, then reload the
+app. This creates a fresh contract; existing records remain at the old contract
+address and are not migrated. The new contract's owner must approve the issuer
+again. Demo mode simulates onboarding without transactions and resets sample
+passports when leaving demo mode.
 
 ## Demo mode
 
